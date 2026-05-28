@@ -1,0 +1,36 @@
+{
+  "name": "tanren",
+  "version": "0.1.0",
+  "description": "Technical Agent for Nurturing & Reinforcing Engineering Navigation",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "tanren": "dist/cli/index.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup src/cli/index.ts --format cjs --dts --no-splitting --banner.js '#!/usr/bin/env node'",
+    "dev": "tsx src/cli/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@google/genai": "^0.7.0",
+    "@inquirer/prompts": "^7.0.0",
+    "better-sqlite3": "^11.0.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
