@@ -2,16 +2,16 @@
   "name": "tanren",
   "version": "0.1.0",
   "description": "Technical Agent for Nurturing & Reinforcing Engineering Navigation",
-  "main": "dist/cli/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "tanren": "dist/cli/index.js"
+    "tanren": "dist/index.js"
   },
   "files": ["dist"],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsup src/cli/index.ts --format cjs --dts --no-splitting --banner.js '#!/usr/bin/env node'",
+    "build": "tsup",
     "dev": "tsx src/cli/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
