@@ -3,10 +3,14 @@ export type Message = {
   content: string
 }
 
-export interface AiProvider {
+export interface ProviderAgent {
   chatStream(
     systemPrompt: string,
     messages: Message[],
     onChunk: (text: string) => void
   ): Promise<string>
+}
+
+export interface Provider {
+  setup(apiKey: string): ProviderAgent
 }

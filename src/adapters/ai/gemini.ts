@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
-import type { AiProvider, Message } from '../../core/ports/ai-provider'
+import type { Provider, ProviderAgent, Message } from '../../core/ports/ai-provider'
 
-export class GeminiProvider implements AiProvider {
+class GeminiAgent implements ProviderAgent {
   private client: GoogleGenAI
 
   constructor(apiKey: string, private model = 'gemini-2.0-flash') {
@@ -36,5 +36,11 @@ export class GeminiProvider implements AiProvider {
     }
 
     return fullText
+  }
+}
+
+export class GeminiProvider implements Provider {
+  setup(apiKey: string): ProviderAgent {
+    return new GeminiAgent(apiKey)
   }
 }
