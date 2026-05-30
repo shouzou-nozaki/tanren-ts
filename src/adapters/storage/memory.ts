@@ -1,7 +1,6 @@
 import type { Message } from '../../core/ports/ai-provider'
 import type { Session, Storage } from '../../core/ports/storage'
 
-// プロセス内に保持する揮発ストレージ。テストや差し替え確認用
 export class MemoryStorage implements Storage {
   private sessions: Session[] = []
   private config = new Map<string, string>()

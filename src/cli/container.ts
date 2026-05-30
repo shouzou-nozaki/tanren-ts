@@ -10,7 +10,7 @@ export type Container = {
   buildProvider: () => ProviderAgent
 }
 
-export function buildContainer(storageName: StorageName = 'sqlite'): Container {
+export function buildContainer(storageName: StorageName = 'yaml'): Container {
   const storage = getStorage(storageName)
 
   return {

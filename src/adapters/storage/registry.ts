@@ -1,13 +1,12 @@
 import type { Storage } from '../../core/ports/storage'
-import { SqliteStorage } from './sqlite'
+import { YamlStorage } from './yaml'
 import { MemoryStorage } from './memory'
 
-export const STORAGE_NAMES = ['sqlite', 'memory'] as const
+export const STORAGE_NAMES = ['yaml', 'memory'] as const
 export type StorageName = (typeof STORAGE_NAMES)[number]
 
-// 選択されたものだけ生成したいので、インスタンスではなくファクトリを登録する
 const factories: Record<StorageName, () => Storage> = {
-  sqlite: () => new SqliteStorage(),
+  yaml: () => new YamlStorage(),
   memory: () => new MemoryStorage(),
 }
 

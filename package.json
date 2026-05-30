@@ -6,7 +6,9 @@
   "bin": {
     "tanren": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "engines": {
     "node": ">=18"
   },
@@ -20,13 +22,13 @@
   "dependencies": {
     "@google/genai": "^0.7.0",
     "@inquirer/prompts": "^7.0.0",
-    "better-sqlite3": "^11.0.0",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
-    "ora": "^5.4.1"
+    "ora": "^5.4.1",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
     "tsup": "^8.3.0",
     "tsx": "^4.19.0",
