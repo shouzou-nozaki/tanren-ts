@@ -13,5 +13,5 @@ export interface ProviderAgent {
 }
 
 export interface Provider {
-  setup(apiKey: string): ProviderAgent
+  setup(apiKey?: string): ProviderAgent
 }
