@@ -11,7 +11,8 @@ class GeminiAgent implements ProviderAgent {
   async chatStream(
     systemPrompt: string,
     messages: Message[],
-    onChunk: (text: string) => void
+    onChunk: (text: string) => void,
+    signal?: AbortSignal
   ): Promise<string> {
     const history = messages.slice(0, -1).map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
@@ -30,6 +31,8 @@ class GeminiAgent implements ProviderAgent {
 
     let fullText = ''
     for await (const chunk of stream) {
+      // 中断要求が来たら消費を止めて抜ける(SDKがHTTP中断に未対応のため自前で打ち切る)
+      if (signal?.aborted) throw signal.reason ?? new Error('中断されました')
       const text = chunk.text ?? ''
       onChunk(text)
       fullText += text

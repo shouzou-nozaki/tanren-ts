@@ -7,6 +7,15 @@ import { askCommand } from './commands/ask'
 
 const { storage, buildProvider } = buildContainer()
 
+async function runAsk(): Promise<void> {
+  try {
+    await askCommand(buildProvider(), storage)
+  } catch (e) {
+    console.log(chalk.red((e as Error).message))
+    process.exit(1)
+  }
+}
+
 program
   .name('tanren')
   .description('Technical Agent for Nurturing & Reinforcing Engineering Navigation')
@@ -20,14 +29,7 @@ program
 program
   .command('ask')
   .description('壁打ちセッションを開始する')
-  .action(() => {
-    try {
-      askCommand(buildProvider(), storage)
-    } catch (e) {
-      console.log(chalk.red((e as Error).message))
-      process.exit(1)
-    }
-  })
+  .action(runAsk)
 
 program.action(async () => {
   const command = await select({
@@ -38,14 +40,7 @@ program.action(async () => {
     ],
   })
 
-  if (command === 'ask') {
-    try {
-      await askCommand(buildProvider(), storage)
-    } catch (e) {
-      console.log(chalk.red((e as Error).message))
-      process.exit(1)
-    }
-  }
+  if (command === 'ask') await runAsk()
   if (command === 'setup') await setupCommand(storage)
 })
 

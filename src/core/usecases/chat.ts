@@ -13,7 +13,8 @@ export async function chat(
   userInput: string,
   provider: ProviderAgent,
   storage: Storage,
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  signal?: AbortSignal
 ): Promise<void> {
   const recent = storage.getRecentSessions(5)
 
@@ -23,9 +24,9 @@ export async function chat(
 
   const messages: Message[] = [...history, { role: 'user', content: userInput }]
 
-  const response = await provider.chatStream(SYSTEM_PROMPT, messages, onChunk)
+  // 中断・失敗時はここで例外が伝播し、保存はスキップされる
+  const response = await provider.chatStream(SYSTEM_PROMPT, messages, onChunk, signal)
 
-  // 今回のやり取りを保存
   storage.saveSession([
     { role: 'user', content: userInput },
     { role: 'assistant', content: response },
