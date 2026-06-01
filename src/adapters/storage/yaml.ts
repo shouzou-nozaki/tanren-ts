@@ -3,10 +3,11 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { parse, stringify } from 'yaml'
 import { z } from 'zod'
-import type { Session, Storage } from '../../core/ports/storage'
+import type { Report, Session, Storage } from '../../core/ports/storage'
 
 const DIR = join(homedir(), '.tanren')
 const SESSIONS_FILE = join(DIR, 'sessions.yaml')
+const REPORTS_FILE = join(DIR, 'reports.yaml')
 const CONFIG_FILE = join(DIR, 'config.yaml')
 
 const sessionsFileSchema = z.object({
@@ -24,11 +25,37 @@ const sessionsFileSchema = z.object({
   ),
 })
 
+const reportsFileSchema = z.object({
+  reports: z.array(
+    z.object({
+      id: z.number(),
+      createdAt: z.string(),
+      content: z.string(),
+    })
+  ),
+})
+
 const configFileSchema = z.record(z.string(), z.string())
 
 export class YamlStorage implements Storage {
   getRecentSessions(limit: number): Session[] {
     return this.readSessions().slice(-limit)
+  }
+
+  getAllSessions(): Session[] {
+    return this.readSessions()
+  }
+
+  getLatestReport(): Report | null {
+    const reports = this.readReports()
+    return reports[reports.length - 1] ?? null
+  }
+
+  saveReport(content: string): void {
+    const reports = this.readReports()
+    const id = reports.length > 0 ? reports[reports.length - 1].id + 1 : 1
+    reports.push({ id, createdAt: new Date().toISOString(), content })
+    this.write(REPORTS_FILE, { reports })
   }
 
   saveSession(messages: Session['messages']): void {
@@ -52,6 +79,12 @@ export class YamlStorage implements Storage {
     const raw = this.read(SESSIONS_FILE)
     if (raw === null) return []
     return this.validate(sessionsFileSchema, raw, SESSIONS_FILE).sessions
+  }
+
+  private readReports(): Report[] {
+    const raw = this.read(REPORTS_FILE)
+    if (raw === null) return []
+    return this.validate(reportsFileSchema, raw, REPORTS_FILE).reports
   }
 
   private readConfig(): Record<string, string> {

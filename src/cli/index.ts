@@ -4,12 +4,22 @@ import chalk from 'chalk'
 import { buildContainer } from './container'
 import { setupCommand } from './commands/setup'
 import { askCommand } from './commands/ask'
+import { reportCommand } from './commands/report'
 
 const { storage, buildProvider } = buildContainer()
 
 async function runAsk(): Promise<void> {
   try {
     await askCommand(buildProvider(), storage)
+  } catch (e) {
+    console.log(chalk.red((e as Error).message))
+    process.exit(1)
+  }
+}
+
+async function runReport(): Promise<void> {
+  try {
+    await reportCommand(buildProvider(), storage)
   } catch (e) {
     console.log(chalk.red((e as Error).message))
     process.exit(1)
@@ -31,16 +41,23 @@ program
   .description('壁打ちセッションを開始する')
   .action(runAsk)
 
+program
+  .command('report')
+  .description('壁打ち履歴から実力を解析する')
+  .action(runReport)
+
 program.action(async () => {
   const command = await select({
     message: 'tanren',
     choices: [
       { name: '💬 壁打ち', value: 'ask' },
+      { name: '📊 実力解析', value: 'report' },
       { name: '🔧 セットアップ', value: 'setup' },
     ],
   })
 
   if (command === 'ask') await runAsk()
+  if (command === 'report') await runReport()
   if (command === 'setup') await setupCommand(storage)
 })
 
