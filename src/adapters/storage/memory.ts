@@ -1,5 +1,5 @@
 import type { Message } from '../../core/ports/ai-provider'
-import type { Report, Session, Storage } from '../../core/ports/storage'
+import type { AbilityReport, Report, Session, Storage } from '../../core/ports/storage'
 
 export class MemoryStorage implements Storage {
   private sessions: Session[] = []
@@ -20,8 +20,8 @@ export class MemoryStorage implements Storage {
     return this.reports[this.reports.length - 1] ?? null
   }
 
-  saveReport(content: string): void {
-    this.reports.push({ id: this.nextReportId++, createdAt: new Date().toISOString(), content })
+  saveReport(abilities: AbilityReport[]): void {
+    this.reports.push({ id: this.nextReportId++, createdAt: new Date().toISOString(), abilities })
   }
 
   saveSession(messages: Message[]): void {

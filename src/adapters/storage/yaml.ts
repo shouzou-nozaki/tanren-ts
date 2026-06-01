@@ -3,7 +3,7 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { parse, stringify } from 'yaml'
 import { z } from 'zod'
-import type { Report, Session, Storage } from '../../core/ports/storage'
+import type { AbilityReport, Report, Session, Storage } from '../../core/ports/storage'
 
 const DIR = join(homedir(), '.tanren')
 const SESSIONS_FILE = join(DIR, 'sessions.yaml')
@@ -30,7 +30,12 @@ const reportsFileSchema = z.object({
     z.object({
       id: z.number(),
       createdAt: z.string(),
-      content: z.string(),
+      abilities: z.array(
+        z.object({
+          axis: z.string(),
+          summary: z.string(),
+        })
+      ),
     })
   ),
 })
@@ -51,10 +56,10 @@ export class YamlStorage implements Storage {
     return reports[reports.length - 1] ?? null
   }
 
-  saveReport(content: string): void {
+  saveReport(abilities: AbilityReport[]): void {
     const reports = this.readReports()
     const id = reports.length > 0 ? reports[reports.length - 1].id + 1 : 1
-    reports.push({ id, createdAt: new Date().toISOString(), content })
+    reports.push({ id, createdAt: new Date().toISOString(), abilities })
     this.write(REPORTS_FILE, { reports })
   }
 
