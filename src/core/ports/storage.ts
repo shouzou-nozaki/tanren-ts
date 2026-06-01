@@ -6,6 +6,12 @@ export type Session = {
   messages: Message[]
 }
 
+export type Axis = {
+  key: string
+  label: string
+  focus: string
+}
+
 export type AbilityReport = {
   axis: string
   summary: string
@@ -23,6 +29,8 @@ export interface Storage {
   saveSession(messages: Message[]): void
   getLatestReport(): Report | null
   saveReport(abilities: AbilityReport[]): void
+  getAxes(): Axis[]
+  saveAxes(axes: Axis[]): void
   getConfig(key: string): string | null
   setConfig(key: string, value: string): void
 }

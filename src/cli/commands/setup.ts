@@ -28,9 +28,11 @@ export async function setupCommand(storage: Storage): Promise<void> {
   }
 
   saveProviderConfig(storage, provider, apiKey)
+  storage.saveAxes(storage.getAxes())
 
   console.log(chalk.green('\n✅ セットアップ完了\n'))
   console.log('使い方: tanren ask')
+  console.log(chalk.gray('解析する能力軸は ~/.tanren/axes.yaml で編集できます'))
 }
 
 function providerLabel(name: ProviderName): string {

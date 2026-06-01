@@ -1,26 +1,5 @@
 import type { ProviderAgent, Message } from '../ports/ai-provider'
-import type { AbilityReport, Report, Session, Storage } from '../ports/storage'
-
-type Axis = {
-  key: string
-  label: string
-  focus: string
-}
-
-const AXES: Axis[] = [
-  {
-    key: 'coding',
-    label: 'コーディング力',
-    focus:
-      '実装力・言語やAPIの知識・デバッグやエラー解決の進め方・コードの読み書きの精度に注目してください。',
-  },
-  {
-    key: 'design',
-    label: '設計力',
-    focus:
-      '責務分割・抽象化・依存方向・トレードオフの判断など、構造を考える力に注目してください。',
-  },
-]
+import type { AbilityReport, Axis, Report, Session, Storage } from '../ports/storage'
 
 function buildSystemPrompt(axis: Axis): string {
   return `あなたはエンジニアの「${axis.label}」を専門に評価する経験豊富なメンターです。
@@ -72,10 +51,11 @@ export async function analyze(
 
   const transcript = buildTranscript(sessions)
   const previous = storage.getLatestReport()
+  const axes = storage.getAxes()
   const abilities: AbilityReport[] = []
 
   // いずれかの軸で中断・失敗すれば例外が伝播し、保存はスキップされる
-  for (const axis of AXES) {
+  for (const axis of axes) {
     handlers.onAxisStart(axis.label)
     const previousAxis = previous?.abilities.find((a) => a.axis === axis.key)
     const messages: Message[] = [{ role: 'user', content: buildPrompt(transcript, previousAxis) }]

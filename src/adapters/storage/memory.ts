@@ -1,9 +1,11 @@
 import type { Message } from '../../core/ports/ai-provider'
-import type { AbilityReport, Report, Session, Storage } from '../../core/ports/storage'
+import type { AbilityReport, Axis, Report, Session, Storage } from '../../core/ports/storage'
+import { DEFAULT_AXES } from '../../core/axes'
 
 export class MemoryStorage implements Storage {
   private sessions: Session[] = []
   private reports: Report[] = []
+  private axes: Axis[] = DEFAULT_AXES
   private config = new Map<string, string>()
   private nextId = 1
   private nextReportId = 1
@@ -30,6 +32,14 @@ export class MemoryStorage implements Storage {
       createdAt: new Date().toISOString(),
       messages,
     })
+  }
+
+  getAxes(): Axis[] {
+    return this.axes
+  }
+
+  saveAxes(axes: Axis[]): void {
+    this.axes = axes
   }
 
   getConfig(key: string): string | null {
