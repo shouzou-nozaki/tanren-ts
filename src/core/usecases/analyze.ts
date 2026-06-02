@@ -23,6 +23,16 @@ ${axis.focus}
 ${axis.label}以外の観点には踏み込まず、励ましつつ忖度のない率直な評価を行ってください。`
 }
 
+const SESSION_LIMIT = 20
+
+// 過去の評価は前回レポートに畳み込まれているため、生ログは「前回以降の新規ぶん」だけ送る
+function selectSessions(sessions: Session[], previous: Report | null): Session[] {
+  const fresh = previous
+    ? sessions.filter((s) => s.createdAt > previous.createdAt)
+    : sessions
+  return fresh.slice(-SESSION_LIMIT)
+}
+
 function buildTranscript(sessions: Session[]): string {
   return sessions
     .map((s) =>
@@ -57,8 +67,13 @@ export async function analyze(
     throw new Error('解析する壁打ち履歴がありません。先に tanren ask で対話してください。')
   }
 
-  const transcript = buildTranscript(sessions)
   const previous = storage.getLatestReport()
+  const target = selectSessions(sessions, previous)
+  if (target.length === 0) {
+    throw new Error('前回の解析以降、新しい壁打ちがありません。先に tanren ask で対話してください。')
+  }
+
+  const transcript = buildTranscript(target)
   const axes = storage.getAxes()
   const abilities: AbilityReport[] = []
 
