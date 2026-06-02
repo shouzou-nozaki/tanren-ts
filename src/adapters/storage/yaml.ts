@@ -3,11 +3,13 @@ import { homedir } from 'os'
 import { join } from 'path'
 import { parse, stringify } from 'yaml'
 import { z } from 'zod'
-import type { Report, Session, Storage } from '../../core/ports/storage'
+import type { AbilityReport, Axis, Report, Session, Storage } from '../../core/ports/storage'
+import { DEFAULT_AXES } from '../../core/axes'
 
 const DIR = join(homedir(), '.tanren')
 const SESSIONS_FILE = join(DIR, 'sessions.yaml')
 const REPORTS_FILE = join(DIR, 'reports.yaml')
+const AXES_FILE = join(DIR, 'axes.yaml')
 const CONFIG_FILE = join(DIR, 'config.yaml')
 
 const sessionsFileSchema = z.object({
@@ -30,7 +32,22 @@ const reportsFileSchema = z.object({
     z.object({
       id: z.number(),
       createdAt: z.string(),
-      content: z.string(),
+      abilities: z.array(
+        z.object({
+          axis: z.string(),
+          summary: z.string(),
+        })
+      ),
+    })
+  ),
+})
+
+const axesFileSchema = z.object({
+  axes: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      focus: z.string(),
     })
   ),
 })
@@ -51,10 +68,10 @@ export class YamlStorage implements Storage {
     return reports[reports.length - 1] ?? null
   }
 
-  saveReport(content: string): void {
+  saveReport(abilities: AbilityReport[]): void {
     const reports = this.readReports()
     const id = reports.length > 0 ? reports[reports.length - 1].id + 1 : 1
-    reports.push({ id, createdAt: new Date().toISOString(), content })
+    reports.push({ id, createdAt: new Date().toISOString(), abilities })
     this.write(REPORTS_FILE, { reports })
   }
 
@@ -63,6 +80,15 @@ export class YamlStorage implements Storage {
     const id = sessions.length > 0 ? sessions[sessions.length - 1].id + 1 : 1
     sessions.push({ id, createdAt: new Date().toISOString(), messages })
     this.write(SESSIONS_FILE, { sessions })
+  }
+
+  getAxes(): Axis[] {
+    const axes = this.readAxes()
+    return axes.length > 0 ? axes : DEFAULT_AXES
+  }
+
+  saveAxes(axes: Axis[]): void {
+    this.write(AXES_FILE, { axes })
   }
 
   getConfig(key: string): string | null {
@@ -85,6 +111,12 @@ export class YamlStorage implements Storage {
     const raw = this.read(REPORTS_FILE)
     if (raw === null) return []
     return this.validate(reportsFileSchema, raw, REPORTS_FILE).reports
+  }
+
+  private readAxes(): Axis[] {
+    const raw = this.read(AXES_FILE)
+    if (raw === null) return []
+    return this.validate(axesFileSchema, raw, AXES_FILE).axes
   }
 
   private readConfig(): Record<string, string> {

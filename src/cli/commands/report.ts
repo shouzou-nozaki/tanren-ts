@@ -20,7 +20,15 @@ export async function reportCommand(provider: ProviderAgent, storage: Storage): 
   process.on('SIGINT', onSigint)
 
   try {
-    await analyze(provider, storage, (chunk) => process.stdout.write(chunk), controller.signal)
+    await analyze(
+      provider,
+      storage,
+      {
+        onAxisStart: (label) => console.log(chalk.bold.cyan(`\n■ ${label}\n`)),
+        onChunk: (chunk) => process.stdout.write(chunk),
+      },
+      controller.signal
+    )
     console.log('\n')
   } catch (e) {
     if (controller.signal.aborted) {
