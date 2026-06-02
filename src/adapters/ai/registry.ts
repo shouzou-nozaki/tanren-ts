@@ -1,5 +1,5 @@
 import type { Provider, ProviderAgent } from '../../core/ports/ai-provider'
-import type { Storage } from '../../core/ports/storage'
+import type { ConfigStore } from '../../core/ports/storage'
 import { GeminiProvider } from './gemini'
 import { ClaudeProvider } from './claude'
 
@@ -39,12 +39,12 @@ export function getProvider(name: ProviderName): Provider {
   return ProviderRegistry.getInstance().get(name)
 }
 
-export function saveProviderConfig(storage: Storage, name: ProviderName, apiKey?: string): void {
+export function saveProviderConfig(storage: ConfigStore, name: ProviderName, apiKey?: string): void {
   storage.setConfig(PROVIDER_KEY, name)
   if (apiKey) storage.setConfig(apiKeyName(name), apiKey)
 }
 
-export function resolveProvider(storage: Storage): ProviderAgent {
+export function resolveProvider(storage: ConfigStore): ProviderAgent {
   const name = (storage.getConfig(PROVIDER_KEY) ?? 'gemini') as ProviderName
   const provider = getProvider(name)
 

@@ -23,14 +23,25 @@ export type Report = {
   abilities: AbilityReport[]
 }
 
-export interface Storage {
+export interface SessionStore {
   getRecentSessions(limit: number): Session[]
   getAllSessions(): Session[]
   saveSession(messages: Message[]): void
+}
+
+export interface ReportStore {
   getLatestReport(): Report | null
   saveReport(abilities: AbilityReport[]): void
+}
+
+export interface AxisStore {
   getAxes(): Axis[]
   saveAxes(axes: Axis[]): void
+}
+
+export interface ConfigStore {
   getConfig(key: string): string | null
   setConfig(key: string, value: string): void
 }
+
+export interface Storage extends SessionStore, ReportStore, AxisStore, ConfigStore {}

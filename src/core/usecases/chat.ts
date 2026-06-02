@@ -1,5 +1,5 @@
 import type { ProviderAgent, Message } from '../ports/ai-provider'
-import type { Storage } from '../ports/storage'
+import type { SessionStore } from '../ports/storage'
 
 const SYSTEM_PROMPT = `あなたは豊富な実務経験を持つシニアエンジニアリングコーチです。
 相手の成長を心から応援しながら、的確で実践的なアドバイスを行います。
@@ -12,7 +12,7 @@ const SYSTEM_PROMPT = `あなたは豊富な実務経験を持つシニアエン
 export async function chat(
   userInput: string,
   provider: ProviderAgent,
-  storage: Storage,
+  storage: SessionStore,
   onChunk: (text: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
