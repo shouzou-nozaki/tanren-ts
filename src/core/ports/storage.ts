@@ -31,6 +31,7 @@ export interface SessionStore {
 
 export interface ReportStore {
   getLatestReport(): Report | null
+  getAllReports(): Report[]
   saveReport(abilities: AbilityReport[]): void
 }
 

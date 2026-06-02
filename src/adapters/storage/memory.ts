@@ -22,6 +22,10 @@ export class MemoryStorage implements Storage {
     return this.reports[this.reports.length - 1] ?? null
   }
 
+  getAllReports(): Report[] {
+    return [...this.reports]
+  }
+
   saveReport(abilities: AbilityReport[]): void {
     this.reports.push({ id: this.nextReportId++, createdAt: new Date().toISOString(), abilities })
   }

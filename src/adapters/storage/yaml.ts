@@ -68,6 +68,10 @@ export class YamlStorage implements Storage {
     return reports[reports.length - 1] ?? null
   }
 
+  getAllReports(): Report[] {
+    return this.readReports()
+  }
+
   saveReport(abilities: AbilityReport[]): void {
     const reports = this.readReports()
     const id = reports.length > 0 ? reports[reports.length - 1].id + 1 : 1
