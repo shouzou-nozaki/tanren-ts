@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 import { input, select } from '@inquirer/prompts'
-import type { Storage } from '../../core/ports/storage'
+import type { AxisStore, ConfigStore } from '../../core/ports/storage'
 import { saveProviderConfig, requiresApiKey } from '../../adapters/ai/registry'
 import { PROVIDER_NAMES, type ProviderName } from '../container'
 
-export async function setupCommand(storage: Storage): Promise<void> {
+export async function setupCommand(storage: AxisStore & ConfigStore): Promise<void> {
   console.log(chalk.cyan('\n🔧 tanren セットアップ\n'))
 
   const provider = await select<ProviderName>({

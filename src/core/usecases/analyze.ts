@@ -1,5 +1,13 @@
 import type { ProviderAgent, Message } from '../ports/ai-provider'
-import type { AbilityReport, Axis, Report, Session, Storage } from '../ports/storage'
+import type {
+  AbilityReport,
+  Axis,
+  AxisStore,
+  Report,
+  ReportStore,
+  Session,
+  SessionStore,
+} from '../ports/storage'
 
 function buildSystemPrompt(axis: Axis): string {
   return `あなたはエンジニアの「${axis.label}」を専門に評価する経験豊富なメンターです。
@@ -40,7 +48,7 @@ type AnalyzeHandlers = {
 
 export async function analyze(
   provider: ProviderAgent,
-  storage: Storage,
+  storage: SessionStore & ReportStore & AxisStore,
   handlers: AnalyzeHandlers,
   signal?: AbortSignal
 ): Promise<Report['abilities']> {
