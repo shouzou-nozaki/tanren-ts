@@ -2,6 +2,7 @@ import { program } from 'commander'
 import { select } from '@inquirer/prompts'
 import chalk from 'chalk'
 import { buildContainer } from './container'
+import { isProviderConfigured } from '../adapters/ai/registry'
 import { setupCommand } from './commands/setup'
 import { askCommand } from './commands/ask'
 import { reportCommand } from './commands/report'
@@ -9,8 +10,17 @@ import { historyCommand } from './commands/history'
 
 const { storage, buildProvider } = buildContainer()
 
+// 初回(プロバイダ未設定)は対話があればセットアップへ誘導する。非対話なら素通りし後段のエラーに委ねる
+async function ensureConfigured(): Promise<void> {
+  if (isProviderConfigured(storage)) return
+  if (!process.stdin.isTTY) return
+  console.log(chalk.yellow('\n👋 ようこそ tanren へ。初回セットアップを行います。'))
+  await setupCommand(storage)
+}
+
 async function runAsk(): Promise<void> {
   try {
+    await ensureConfigured()
     await askCommand(buildProvider(), storage)
   } catch (e) {
     console.log(chalk.red((e as Error).message))
@@ -20,6 +30,7 @@ async function runAsk(): Promise<void> {
 
 async function runReport(): Promise<void> {
   try {
+    await ensureConfigured()
     await reportCommand(buildProvider(), storage)
   } catch (e) {
     console.log(chalk.red((e as Error).message))

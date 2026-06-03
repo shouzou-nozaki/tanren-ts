@@ -39,6 +39,10 @@ export function getProvider(name: ProviderName): Provider {
   return ProviderRegistry.getInstance().get(name)
 }
 
+export function isProviderConfigured(storage: ConfigStore): boolean {
+  return storage.getConfig(PROVIDER_KEY) !== null
+}
+
 export function saveProviderConfig(storage: ConfigStore, name: ProviderName, apiKey?: string): void {
   storage.setConfig(PROVIDER_KEY, name)
   if (apiKey) storage.setConfig(apiKeyName(name), apiKey)
