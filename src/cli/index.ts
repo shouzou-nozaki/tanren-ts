@@ -7,6 +7,7 @@ import { setupCommand } from './commands/setup'
 import { askCommand } from './commands/ask'
 import { reportCommand } from './commands/report'
 import { historyCommand } from './commands/history'
+import { actionsCommand } from './commands/actions'
 
 const { storage, buildProvider } = buildContainer()
 
@@ -72,12 +73,18 @@ program
   .description('過去の解析レポートを閲覧する')
   .action(runHistory)
 
+program
+  .command('actions')
+  .description('次に取り組むべきことを表示する')
+  .action(() => actionsCommand(storage))
+
 program.action(async () => {
   const command = await select({
     message: 'tanren',
     choices: [
       { name: '💬 壁打ち', value: 'ask' },
       { name: '📊 実力解析', value: 'report' },
+      { name: '🎯 次のアクション', value: 'actions' },
       { name: '📚 レポート履歴', value: 'history' },
       { name: '🔧 セットアップ', value: 'setup' },
     ],
@@ -85,6 +92,7 @@ program.action(async () => {
 
   if (command === 'ask') await runAsk()
   if (command === 'report') await runReport()
+  if (command === 'actions') actionsCommand(storage)
   if (command === 'history') runHistory()
   if (command === 'setup') await setupCommand(storage)
 })

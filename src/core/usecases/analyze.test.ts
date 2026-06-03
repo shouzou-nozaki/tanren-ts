@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { analyze } from './analyze'
+import { analyze, parseNextActions } from './analyze'
 import { MemoryStorage } from '../../adapters/storage/memory'
 import type { ProviderAgent } from '../ports/ai-provider'
 import type { Axis } from '../ports/storage'
@@ -69,8 +69,8 @@ describe('analyze', () => {
     const result = await analyze(provider, s, noopHandlers)
 
     expect(result).toEqual([
-      { axis: 'a', summary: 'A所感' },
-      { axis: 'b', summary: 'B所感' },
+      { axis: 'a', summary: 'A所感', nextActions: [] },
+      { axis: 'b', summary: 'B所感', nextActions: [] },
     ])
     expect(s.getLatestReport()?.abilities).toEqual(result)
   })
@@ -182,5 +182,62 @@ describe('analyze', () => {
     const s = seed([{ key: 'solo', label: '単一軸', focus: 'x' }])
     const result = await analyze(provider, s, noopHandlers)
     expect(result.map((r) => r.axis)).toEqual(['solo'])
+  })
+
+  it('エージェント出力から次アクションを抽出して保存する', async () => {
+    const provider: ProviderAgent = {
+      async chatStream(_s, _m, onChunk) {
+        const out = '本文の評価\n次のアクション:\n- 手を動かす\n- 設計を言語化する'
+        onChunk(out)
+        return out
+      },
+    }
+    const s = seed([AXES[0]])
+    const result = await analyze(provider, s, noopHandlers)
+    expect(result[0].nextActions).toEqual(['手を動かす', '設計を言語化する'])
+  })
+
+  it('前回の次アクションを2回目のプロンプトに渡す', async () => {
+    vi.useFakeTimers()
+    at('2026-01-01T00:00:00Z')
+    const s = new MemoryStorage()
+    s.saveAxes([AXES[0]])
+    s.saveSession([{ role: 'user', content: 'Q1' }])
+
+    const first: ProviderAgent = {
+      async chatStream(_s, _m, onChunk) {
+        const out = '評価\n次のアクション:\n- 設計原則を3つ言語化する'
+        onChunk(out)
+        return out
+      },
+    }
+    at('2026-01-01T01:00:00Z')
+    await analyze(first, s, noopHandlers)
+
+    at('2026-01-01T02:00:00Z')
+    s.saveSession([{ role: 'user', content: 'Q2' }])
+
+    at('2026-01-01T03:00:00Z')
+    const { provider, calls } = recordingProvider()
+    await analyze(provider, s, noopHandlers)
+
+    expect(calls[0].user).toContain('前回あなたが提示した')
+    expect(calls[0].user).toContain('設計原則を3つ言語化する')
+  })
+})
+
+describe('parseNextActions', () => {
+  it('マーカー以降の各種箇条書きを抽出する', () => {
+    const text = '評価本文\n次のアクション:\n- A\n* B\n・C\n1. D\n2) E'
+    expect(parseNextActions(text)).toEqual(['A', 'B', 'C', 'D', 'E'])
+  })
+
+  it('マーカーが無ければ空配列', () => {
+    expect(parseNextActions('ただの評価文')).toEqual([])
+  })
+
+  it('マーカーより前の箇条書きは拾わない', () => {
+    const text = '- 本文の箇条書き\n次のアクション:\n- 実アクション'
+    expect(parseNextActions(text)).toEqual(['実アクション'])
   })
 })

@@ -17,10 +17,26 @@ ${axis.focus}
 次の点をレポートしてください。
 - 強み(具体的な根拠とともに)
 - 弱み・つまずきやすい傾向
-- 次に学ぶべきこと(優先順位をつけて具体的に)
 
 前回の解析結果が与えられた場合は、そこからの成長や変化にも必ず触れてください。
-${axis.label}以外の観点には踏み込まず、励ましつつ忖度のない率直な評価を行ってください。`
+${axis.label}以外の観点には踏み込まず、励ましつつ忖度のない率直な評価を行ってください。
+
+最後に必ず、次に取り組むべきことを以下の形式で箇条書きにしてください(各項目は具体的で実行可能な1文)。
+次のアクション:
+- ...
+- ...`
+}
+
+// エージェント出力末尾の「次のアクション:」以降の箇条書きを抽出する
+export function parseNextActions(text: string): string[] {
+  const marker = text.lastIndexOf('次のアクション')
+  if (marker === -1) return []
+  return text
+    .slice(marker)
+    .split('\n')
+    .filter((l) => /^\s*([-*・]|\d+[.)])\s*/.test(l))
+    .map((l) => l.replace(/^\s*([-*・]|\d+[.)])\s*/, '').trim())
+    .filter((l) => l.length > 0)
 }
 
 const SESSION_LIMIT = 20
@@ -47,6 +63,10 @@ function buildPrompt(transcript: string, previous: AbilityReport | undefined): s
   let prompt = `以下はユーザーとAIコーチの壁打ち履歴です。これを分析してレポートしてください。\n\n${transcript}`
   if (previous) {
     prompt += `\n\n前回の同じ観点の解析結果は次の通りです。前回からの成長・変化も評価してください。\n\n${previous.summary}`
+    if (previous.nextActions.length > 0) {
+      const list = previous.nextActions.map((a) => `- ${a}`).join('\n')
+      prompt += `\n\n前回あなたが提示した「次のアクション」は以下です。今回の壁打ちでこれらに取り組めたか・進捗があったかを必ず評価してください。\n${list}`
+    }
   }
   return prompt
 }
@@ -88,7 +108,7 @@ export async function analyze(
       handlers.onChunk,
       signal
     )
-    abilities.push({ axis: axis.key, summary })
+    abilities.push({ axis: axis.key, summary, nextActions: parseNextActions(summary) })
   }
 
   storage.saveReport(abilities)

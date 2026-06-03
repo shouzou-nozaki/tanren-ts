@@ -43,12 +43,25 @@ describe('YamlStorage', () => {
 
   it('レポートを保存して最新を取得できidが採番される', () => {
     const s = makeStorage()
-    s.saveReport([{ axis: 'design', summary: 'r1' }])
-    s.saveReport([{ axis: 'design', summary: 'r2' }])
+    s.saveReport([{ axis: 'design', summary: 'r1', nextActions: [] }])
+    s.saveReport([{ axis: 'design', summary: 'r2', nextActions: [] }])
 
     const latest = s.getLatestReport()
     expect(latest?.id).toBe(2)
     expect(latest?.abilities[0].summary).toBe('r2')
+  })
+
+  it('次アクション付きレポートを読み戻せる', () => {
+    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: ['x', 'y'] }])
+    expect(makeStorage().getLatestReport()?.abilities[0].nextActions).toEqual(['x', 'y'])
+  })
+
+  it('nextActions の無い旧レポートは空配列として読む', () => {
+    writeRaw(
+      'reports.yaml',
+      'reports:\n  - id: 1\n    createdAt: "2026-01-01T00:00:00Z"\n    abilities:\n      - axis: a\n        summary: s\n'
+    )
+    expect(makeStorage().getLatestReport()?.abilities[0].nextActions).toEqual([])
   })
 
   it('config を保存して読み戻せる', () => {
@@ -71,7 +84,7 @@ describe('YamlStorage', () => {
   })
 
   it('別インスタンスからでも永続化された内容を読める', () => {
-    makeStorage().saveReport([{ axis: 'a', summary: 's' }])
+    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: [] }])
     expect(makeStorage().getLatestReport()?.abilities[0].summary).toBe('s')
   })
 
@@ -91,13 +104,13 @@ describe('YamlStorage', () => {
     const s = makeStorage()
 
     // saveReport は既存読み込み→検証で失敗し、書き込みに到達しない
-    expect(() => s.saveReport([{ axis: 'a', summary: 's' }])).toThrow()
+    expect(() => s.saveReport([{ axis: 'a', summary: 's', nextActions: [] }])).toThrow()
     expect(readFileSync(join(TANREN_DIR, 'reports.yaml'), 'utf-8')).toBe(before)
   })
 
   it('保存はアトミックで一時ファイルを残さない', () => {
     const s = makeStorage()
-    s.saveReport([{ axis: 'a', summary: 's' }])
+    s.saveReport([{ axis: 'a', summary: 's', nextActions: [] }])
     expect(existsSync(join(TANREN_DIR, 'reports.yaml'))).toBe(true)
     const leftover = readdirSync(TANREN_DIR).filter((f) => f.includes('.tmp'))
     expect(leftover).toHaveLength(0)
