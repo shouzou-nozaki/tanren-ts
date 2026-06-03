@@ -4,8 +4,8 @@ import { MemoryStorage } from '../../adapters/storage/memory'
 
 function seed(): MemoryStorage {
   const s = new MemoryStorage()
-  s.saveReport([{ axis: 'a', summary: 's1' }])
-  s.saveReport([{ axis: 'a', summary: 's2' }])
+  s.saveReport([{ axis: 'a', summary: 's1', nextActions: [] }])
+  s.saveReport([{ axis: 'a', summary: 's2', nextActions: [] }])
   return s
 }
 

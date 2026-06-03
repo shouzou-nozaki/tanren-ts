@@ -15,6 +15,7 @@ export type Axis = {
 export type AbilityReport = {
   axis: string
   summary: string
+  nextActions: string[]
 }
 
 export type Report = {

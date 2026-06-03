@@ -1,9 +1,10 @@
 import chalk from 'chalk'
 import type { AxisStore, Report, ReportStore } from '../../core/ports/storage'
 import { listReports, getReport } from '../../core/usecases/history'
+import { formatDate, resolveAxisLabel } from '../format'
 
 export function historyCommand(storage: ReportStore & AxisStore, id?: number): void {
-  const labelOf = buildLabelResolver(storage)
+  const labelOf = resolveAxisLabel(storage)
 
   if (id !== undefined) {
     showReport(getReport(storage, id), labelOf)
@@ -30,13 +31,4 @@ function showReport(report: Report, labelOf: (axis: string) => string): void {
     console.log(chalk.bold.cyan(`■ ${labelOf(ability.axis)}\n`))
     console.log(`${ability.summary}\n`)
   }
-}
-
-function buildLabelResolver(storage: AxisStore): (axis: string) => string {
-  const labels = new Map(storage.getAxes().map((a) => [a.key, a.label]))
-  return (axis) => labels.get(axis) ?? axis
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('ja-JP')
 }

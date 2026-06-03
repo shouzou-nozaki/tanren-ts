@@ -36,6 +36,7 @@ const reportsFileSchema = z.object({
         z.object({
           axis: z.string(),
           summary: z.string(),
+          nextActions: z.array(z.string()).default([]),
         })
       ),
     })
