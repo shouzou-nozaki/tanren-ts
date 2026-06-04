@@ -43,8 +43,8 @@ describe('YamlStorage', () => {
 
   it('レポートを保存して最新を取得できidが採番される', () => {
     const s = makeStorage()
-    s.saveReport([{ axis: 'design', summary: 'r1', nextActions: [], score: 2, carriedOver: false }])
-    s.saveReport([{ axis: 'design', summary: 'r2', nextActions: [], score: 3, carriedOver: false }])
+    s.saveReport([{ axis: 'design', summary: 'r1', nextActions: [], score: 2 }])
+    s.saveReport([{ axis: 'design', summary: 'r2', nextActions: [], score: 3 }])
 
     const latest = s.getLatestReport()
     expect(latest?.id).toBe(2)
@@ -52,7 +52,7 @@ describe('YamlStorage', () => {
   })
 
   it('次アクション付きレポートを読み戻せる', () => {
-    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: ['x', 'y'], score: null, carriedOver: false }])
+    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: ['x', 'y'], score: null }])
     expect(makeStorage().getLatestReport()?.abilities[0].nextActions).toEqual(['x', 'y'])
   })
 
@@ -64,14 +64,12 @@ describe('YamlStorage', () => {
     expect(makeStorage().getLatestReport()?.abilities[0].nextActions).toEqual([])
   })
 
-  it('score の無い旧レポートは未評価(null/据え置きfalse)として読む', () => {
+  it('score の無い旧レポートは未評価(null)として読む', () => {
     writeRaw(
       'reports.yaml',
       'reports:\n  - id: 1\n    createdAt: "2026-01-01T00:00:00Z"\n    abilities:\n      - axis: a\n        summary: s\n'
     )
-    const ability = makeStorage().getLatestReport()?.abilities[0]
-    expect(ability?.score).toBeNull()
-    expect(ability?.carriedOver).toBe(false)
+    expect(makeStorage().getLatestReport()?.abilities[0].score).toBeNull()
   })
 
   it('config を保存して読み戻せる', () => {
@@ -94,7 +92,7 @@ describe('YamlStorage', () => {
   })
 
   it('別インスタンスからでも永続化された内容を読める', () => {
-    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null, carriedOver: false }])
+    makeStorage().saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null }])
     expect(makeStorage().getLatestReport()?.abilities[0].summary).toBe('s')
   })
 
@@ -114,13 +112,13 @@ describe('YamlStorage', () => {
     const s = makeStorage()
 
     // saveReport は既存読み込み→検証で失敗し、書き込みに到達しない
-    expect(() => s.saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null, carriedOver: false }])).toThrow()
+    expect(() => s.saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null }])).toThrow()
     expect(readFileSync(join(TANREN_DIR, 'reports.yaml'), 'utf-8')).toBe(before)
   })
 
   it('保存はアトミックで一時ファイルを残さない', () => {
     const s = makeStorage()
-    s.saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null, carriedOver: false }])
+    s.saveReport([{ axis: 'a', summary: 's', nextActions: [], score: null }])
     expect(existsSync(join(TANREN_DIR, 'reports.yaml'))).toBe(true)
     const leftover = readdirSync(TANREN_DIR).filter((f) => f.includes('.tmp'))
     expect(leftover).toHaveLength(0)

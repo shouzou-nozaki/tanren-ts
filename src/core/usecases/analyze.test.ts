@@ -69,8 +69,8 @@ describe('analyze', () => {
     const result = await analyze(provider, s, noopHandlers)
 
     expect(result).toEqual([
-      { axis: 'a', summary: 'A所感', nextActions: [], score: null, carriedOver: true },
-      { axis: 'b', summary: 'B所感', nextActions: [], score: null, carriedOver: true },
+      { axis: 'a', summary: 'A所感', nextActions: [], score: null },
+      { axis: 'b', summary: 'B所感', nextActions: [], score: null },
     ])
     expect(s.getLatestReport()?.abilities).toEqual(result)
   })
@@ -236,10 +236,9 @@ describe('analyze', () => {
     const s = seed([AXES[0]])
     const result = await analyze(provider, s, noopHandlers)
     expect(result[0].score).toBe(4)
-    expect(result[0].carriedOver).toBe(false)
   })
 
-  it('採点不能なら前回スコアを据え置き、据え置きと記録する', async () => {
+  it('採点不能なら前回スコアを据え置く', async () => {
     vi.useFakeTimers()
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
@@ -270,7 +269,6 @@ describe('analyze', () => {
     const result = await analyze(unscorable, s, noopHandlers)
 
     expect(result[0].score).toBe(3)
-    expect(result[0].carriedOver).toBe(true)
   })
 })
 

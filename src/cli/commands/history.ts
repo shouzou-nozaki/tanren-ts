@@ -41,13 +41,11 @@ function showReport(report: Report, previous: Report | null, labelOf: (axis: str
 function scoreLine(ability: AbilityReport, prev: AbilityReport | null): string {
   if (ability.score === null) return chalk.gray('未評価')
   const stars = '★'.repeat(ability.score) + '☆'.repeat(5 - ability.score)
-  if (ability.carriedOver) return chalk.gray(`${stars} ${ability.score}/5 (据え置き)`)
-  if (prev && prev.score !== null) {
-    const d = ability.score - prev.score
-    const delta = d > 0 ? chalk.green(`+${d}`) : d < 0 ? chalk.red(String(d)) : '±0'
-    return `${stars} ${ability.score}/5 ${chalk.gray(`(前回 ${prev.score} → ${delta})`)}`
-  }
-  return `${stars} ${ability.score}/5 ${chalk.gray('(初採点)')}`
+  if (!prev || prev.score === null) return `${stars} ${ability.score}/5 ${chalk.gray('(初採点)')}`
+  const d = ability.score - prev.score
+  if (d === 0) return `${stars} ${ability.score}/5 ${chalk.gray('(前回と同じ)')}`
+  const delta = d > 0 ? chalk.green(`+${d}`) : chalk.red(String(d))
+  return `${stars} ${ability.score}/5 ${chalk.gray(`(前回 ${prev.score} → ${delta})`)}`
 }
 
 function printTrend(reports: Report[], labelOf: (axis: string) => string): void {

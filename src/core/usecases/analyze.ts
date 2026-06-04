@@ -125,16 +125,13 @@ export async function analyze(
       handlers.onChunk,
       signal
     )
-    // 今回採点できなければ前回点を据え置き、据え置きであることを記録する
-    const scored = parseScore(summary)
-    const carriedOver = scored === null
-    const score = carriedOver ? (previousAxis?.score ?? null) : scored
+    // 今回採点できなければ前回点を据え置く
+    const score = parseScore(summary) ?? previousAxis?.score ?? null
     abilities.push({
       axis: axis.key,
       summary,
       nextActions: parseNextActions(summary),
       score,
-      carriedOver,
     })
   }
 

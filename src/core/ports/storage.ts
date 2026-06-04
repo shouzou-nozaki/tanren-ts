@@ -17,7 +17,6 @@ export type AbilityReport = {
   summary: string
   nextActions: string[]
   score: number | null
-  carriedOver: boolean
 }
 
 export type Report = {
