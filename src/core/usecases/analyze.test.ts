@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { analyze, parseNextActions } from './analyze'
+import { analyze, parseNextActions, parseScore } from './analyze'
 import { MemoryStorage } from '../../adapters/storage/memory'
 import type { ProviderAgent } from '../ports/ai-provider'
 import type { Axis } from '../ports/storage'
@@ -69,8 +69,8 @@ describe('analyze', () => {
     const result = await analyze(provider, s, noopHandlers)
 
     expect(result).toEqual([
-      { axis: 'a', summary: 'A所感', nextActions: [] },
-      { axis: 'b', summary: 'B所感', nextActions: [] },
+      { axis: 'a', summary: 'A所感', nextActions: [], score: null, carriedOver: true },
+      { axis: 'b', summary: 'B所感', nextActions: [], score: null, carriedOver: true },
     ])
     expect(s.getLatestReport()?.abilities).toEqual(result)
   })
@@ -223,6 +223,72 @@ describe('analyze', () => {
 
     expect(calls[0].user).toContain('前回あなたが提示した')
     expect(calls[0].user).toContain('設計原則を3つ言語化する')
+  })
+
+  it('エージェント出力からスコアを抽出して保存する', async () => {
+    const provider: ProviderAgent = {
+      async chatStream(_s, _m, onChunk) {
+        const out = '評価本文\nスコア: 4/5'
+        onChunk(out)
+        return out
+      },
+    }
+    const s = seed([AXES[0]])
+    const result = await analyze(provider, s, noopHandlers)
+    expect(result[0].score).toBe(4)
+    expect(result[0].carriedOver).toBe(false)
+  })
+
+  it('採点不能なら前回スコアを据え置き、据え置きと記録する', async () => {
+    vi.useFakeTimers()
+    at('2026-01-01T00:00:00Z')
+    const s = new MemoryStorage()
+    s.saveAxes([AXES[0]])
+    s.saveSession([{ role: 'user', content: 'Q1' }])
+
+    const scoring: ProviderAgent = {
+      async chatStream(_s, _m, onChunk) {
+        const out = '評価\nスコア: 3/5'
+        onChunk(out)
+        return out
+      },
+    }
+    at('2026-01-01T01:00:00Z')
+    await analyze(scoring, s, noopHandlers)
+
+    at('2026-01-01T02:00:00Z')
+    s.saveSession([{ role: 'user', content: 'Q2' }])
+
+    const unscorable: ProviderAgent = {
+      async chatStream(_s, _m, onChunk) {
+        const out = '評価\nスコア: 評価不能'
+        onChunk(out)
+        return out
+      },
+    }
+    at('2026-01-01T03:00:00Z')
+    const result = await analyze(unscorable, s, noopHandlers)
+
+    expect(result[0].score).toBe(3)
+    expect(result[0].carriedOver).toBe(true)
+  })
+})
+
+describe('parseScore', () => {
+  it('スコア行から1〜5を読む', () => {
+    expect(parseScore('本文\nスコア: 4/5')).toBe(4)
+  })
+
+  it('評価不能は null', () => {
+    expect(parseScore('本文\nスコア: 評価不能')).toBeNull()
+  })
+
+  it('マーカーが無ければ null', () => {
+    expect(parseScore('ただの評価文')).toBeNull()
+  })
+
+  it('5段階などの数字を誤検出しない', () => {
+    expect(parseScore('5段階で評価した\nスコア: 評価不能')).toBeNull()
   })
 })
 

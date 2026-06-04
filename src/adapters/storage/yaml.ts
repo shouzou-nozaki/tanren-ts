@@ -37,6 +37,8 @@ const reportsFileSchema = z.object({
           axis: z.string(),
           summary: z.string(),
           nextActions: z.array(z.string()).default([]),
+          score: z.number().nullable().default(null),
+          carriedOver: z.boolean().default(false),
         })
       ),
     })

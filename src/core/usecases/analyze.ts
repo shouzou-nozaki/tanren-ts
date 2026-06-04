@@ -21,10 +21,27 @@ ${axis.focus}
 前回の解析結果が与えられた場合は、そこからの成長や変化にも必ず触れてください。
 ${axis.label}以外の観点には踏み込まず、励ましつつ忖度のない率直な評価を行ってください。
 
-最後に必ず、次に取り組むべきことを以下の形式で箇条書きにしてください(各項目は具体的で実行可能な1文)。
+続いて、次に取り組むべきことを以下の形式で箇条書きにしてください(各項目は具体的で実行可能な1文)。
 次のアクション:
 - ...
-- ...`
+- ...
+
+最後に、この観点の現在の到達度を5段階で採点し、末尾に1行だけ記してください。基準は次の通りです。
+5: 高い水準で安定して発揮できている
+4: おおむね発揮できているが一部に課題が残る
+3: 基礎はあるが場当たり的で不安定
+2: 断片的で根拠が弱い
+1: ほとんど見られない
+ただし今回の壁打ちにこの観点を評価する材料が乏しい場合は、無理に採点しないでください。
+スコア: N/5    (採点できない場合は「スコア: 評価不能」)`
+}
+
+// エージェント出力末尾の「スコア: N/5」を読む。読めなければ null(=据え置き扱い)
+export function parseScore(text: string): number | null {
+  const marker = text.lastIndexOf('スコア')
+  if (marker === -1) return null
+  const m = text.slice(marker).match(/([1-5])\s*\/\s*5/)
+  return m ? Number(m[1]) : null
 }
 
 // エージェント出力末尾の「次のアクション:」以降の箇条書きを抽出する
@@ -108,7 +125,17 @@ export async function analyze(
       handlers.onChunk,
       signal
     )
-    abilities.push({ axis: axis.key, summary, nextActions: parseNextActions(summary) })
+    // 今回採点できなければ前回点を据え置き、据え置きであることを記録する
+    const scored = parseScore(summary)
+    const carriedOver = scored === null
+    const score = carriedOver ? (previousAxis?.score ?? null) : scored
+    abilities.push({
+      axis: axis.key,
+      summary,
+      nextActions: parseNextActions(summary),
+      score,
+      carriedOver,
+    })
   }
 
   storage.saveReport(abilities)
