@@ -16,6 +16,8 @@ function buildPrompt(messages: Message[]): string {
 }
 
 class ClaudeAgent implements ProviderAgent {
+  readonly capabilities = { readsLocalSource: true }
+
   async chatStream(
     systemPrompt: string,
     messages: Message[],

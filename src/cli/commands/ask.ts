@@ -6,6 +6,9 @@ import { chat } from '../../core/usecases/chat'
 
 export async function askCommand(provider: ProviderAgent, storage: Storage): Promise<void> {
   console.log(chalk.cyan('\n💬 tanren 壁打ちセッション'))
+  if (provider.capabilities.readsLocalSource) {
+    console.log(chalk.gray('コードのパスを貼れば読んで議論します'))
+  }
   console.log(chalk.gray('終了するには Ctrl+C\n'))
 
   while (true) {

@@ -3,7 +3,12 @@ export type Message = {
   content: string
 }
 
+export interface ProviderCapabilities {
+  readonly readsLocalSource: boolean
+}
+
 export interface ProviderAgent {
+  readonly capabilities: ProviderCapabilities
   chatStream(
     systemPrompt: string,
     messages: Message[],

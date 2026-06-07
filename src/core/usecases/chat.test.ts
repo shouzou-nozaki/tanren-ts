@@ -12,6 +12,7 @@ const AXES: Axis[] = [
 function recordingProvider(): { provider: ProviderAgent; calls: { system: string }[] } {
   const calls: { system: string }[] = []
   const provider: ProviderAgent = {
+    capabilities: { readsLocalSource: false },
     async chatStream(system, _messages, onChunk) {
       calls.push({ system })
       onChunk('応答')
