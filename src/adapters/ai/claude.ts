@@ -1,6 +1,10 @@
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import type { Provider, ProviderAgent, Message } from '../../core/ports/ai-provider'
 
+// パスが渡されたら推測で語らず実際に読ませる(Claude Agent SDK のツール利用前提)
+const TOOL_HINT =
+  '\n\nファイルやディレクトリのパスが示されたら、推測で語らず Read・Grep・Glob で実際に中身を読んでから具体的に答えてください。'
+
 function buildPrompt(messages: Message[]): string {
   if (messages.length <= 1) return messages[messages.length - 1]?.content ?? ''
   const history = messages
@@ -27,15 +31,16 @@ class ClaudeAgent implements ProviderAgent {
     const stream = query({
       prompt: buildPrompt(messages),
       options: {
-        systemPrompt,
-        allowedTools: [],
-        maxTurns: 1,
+        systemPrompt: systemPrompt + TOOL_HINT,
+        allowedTools: ['Read', 'Grep', 'Glob'],
+        maxTurns: 10,
         includePartialMessages: true,
         abortController: controller,
       },
     })
 
     let fullText = ''
+    let resultError: string | undefined
     for await (const msg of stream) {
       if (signal?.aborted) throw signal.reason ?? new Error('中断されました')
 
@@ -46,10 +51,15 @@ class ClaudeAgent implements ProviderAgent {
           fullText += event.delta.text
         }
       } else if (msg.type === 'result' && msg.subtype !== 'success') {
-        throw new Error(`Claude応答エラー: ${msg.subtype}`)
+        // ツール使用中などに上限へ達しても、得られた応答は捨てない
+        resultError = msg.subtype
       }
     }
 
+    // 応答が全く取れなかった時だけエラーとする
+    if (fullText.length === 0 && resultError) {
+      throw new Error(`Claude応答エラー: ${resultError}`)
+    }
     return fullText
   }
 }
