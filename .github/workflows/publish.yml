@@ -32,4 +32,4 @@ jobs:
             npm publish --provenance
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.TANREN_CICD }}
