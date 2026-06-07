@@ -14,6 +14,7 @@ type Recorded = { system: string; user: string }
 function recordingProvider(): { provider: ProviderAgent; calls: Recorded[] } {
   const calls: Recorded[] = []
   const provider: ProviderAgent = {
+    capabilities: { readsLocalSource: false },
     async chatStream(system, messages, onChunk) {
       calls.push({ system, user: messages[0].content })
       const out = system.includes('Aの力') ? 'A所感' : 'B所感'
@@ -166,6 +167,7 @@ describe('analyze', () => {
 
   it('途中の軸で失敗したら保存しない(原子性)', async () => {
     const failing: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(system, _m, onChunk) {
         if (system.includes('Bの力')) throw new Error('boom')
         onChunk('ok')
@@ -186,6 +188,7 @@ describe('analyze', () => {
 
   it('エージェント出力から次アクションを抽出して保存する', async () => {
     const provider: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(_s, _m, onChunk) {
         const out = '本文の評価\n次のアクション:\n- 手を動かす\n- 設計を言語化する'
         onChunk(out)
@@ -205,6 +208,7 @@ describe('analyze', () => {
     s.saveSession([{ role: 'user', content: 'Q1' }])
 
     const first: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(_s, _m, onChunk) {
         const out = '評価\n次のアクション:\n- 設計原則を3つ言語化する'
         onChunk(out)
@@ -227,6 +231,7 @@ describe('analyze', () => {
 
   it('エージェント出力からスコアを抽出して保存する', async () => {
     const provider: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(_s, _m, onChunk) {
         const out = '評価本文\nスコア: 4/5'
         onChunk(out)
@@ -246,6 +251,7 @@ describe('analyze', () => {
     s.saveSession([{ role: 'user', content: 'Q1' }])
 
     const scoring: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(_s, _m, onChunk) {
         const out = '評価\nスコア: 3/5'
         onChunk(out)
@@ -259,6 +265,7 @@ describe('analyze', () => {
     s.saveSession([{ role: 'user', content: 'Q2' }])
 
     const unscorable: ProviderAgent = {
+      capabilities: { readsLocalSource: false },
       async chatStream(_s, _m, onChunk) {
         const out = '評価\nスコア: 評価不能'
         onChunk(out)

@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai'
 import type { Provider, ProviderAgent, Message } from '../../core/ports/ai-provider'
 
 class GeminiAgent implements ProviderAgent {
+  readonly capabilities = { readsLocalSource: false }
   private client: GoogleGenAI
 
   constructor(apiKey: string, private model = 'gemini-2.0-flash') {
