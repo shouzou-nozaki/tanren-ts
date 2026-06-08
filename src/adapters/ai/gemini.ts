@@ -44,6 +44,7 @@ class GeminiAgent implements ProviderAgent {
 }
 
 export class GeminiProvider implements Provider {
+  readonly requiresApiKey = true
   setup(apiKey?: string): ProviderAgent {
     if (!apiKey) throw new Error('Gemini にはAPIキーが必要です')
     return new GeminiAgent(apiKey)

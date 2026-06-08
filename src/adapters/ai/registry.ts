@@ -12,11 +12,8 @@ const DEFAULT_PROVIDER: ProviderName = 'gemini'
 const PROVIDER_KEY = 'provider'
 const apiKeyName = (name: ProviderName) => `${name}_api_key`
 
-// APIキーが必要なプロバイダー(未掲載はログイン等の自前認証を使う)
-const API_KEY_PROVIDERS = new Set<ProviderName>(['gemini'])
-
 export function requiresApiKey(name: ProviderName): boolean {
-  return API_KEY_PROVIDERS.has(name)
+  return getProvider(name).requiresApiKey
 }
 
 const factories: Record<ProviderName, () => Provider> = {

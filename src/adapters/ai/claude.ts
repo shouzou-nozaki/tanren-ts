@@ -67,6 +67,7 @@ class ClaudeAgent implements ProviderAgent {
 }
 
 export class ClaudeProvider implements Provider {
+  readonly requiresApiKey = false
   setup(): ProviderAgent {
     return new ClaudeAgent()
   }
