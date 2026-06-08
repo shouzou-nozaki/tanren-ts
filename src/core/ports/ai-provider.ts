@@ -18,5 +18,6 @@ export interface ProviderAgent {
 }
 
 export interface Provider {
+  readonly requiresApiKey: boolean
   setup(apiKey?: string): ProviderAgent
 }
