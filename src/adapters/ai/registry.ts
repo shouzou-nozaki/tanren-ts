@@ -6,6 +6,9 @@ import { ClaudeProvider } from './claude'
 export const PROVIDER_NAMES = ['gemini', 'claude'] as const
 export type ProviderName = (typeof PROVIDER_NAMES)[number]
 
+// プロバイダー未設定時の既定値(設定知識なので解決ロジックから分離する)
+const DEFAULT_PROVIDER: ProviderName = 'gemini'
+
 const PROVIDER_KEY = 'provider'
 const apiKeyName = (name: ProviderName) => `${name}_api_key`
 
@@ -16,27 +19,15 @@ export function requiresApiKey(name: ProviderName): boolean {
   return API_KEY_PROVIDERS.has(name)
 }
 
-class ProviderRegistry {
-  private static instance: ProviderRegistry
-  private providers = new Map<ProviderName, Provider>([
-    ['gemini', new GeminiProvider()],
-    ['claude', new ClaudeProvider()],
-  ])
-
-  static getInstance(): ProviderRegistry {
-    if (!this.instance) this.instance = new ProviderRegistry()
-    return this.instance
-  }
-
-  get(name: ProviderName): Provider {
-    const provider = this.providers.get(name)
-    if (!provider) throw new Error(`未対応のプロバイダーです: ${name}`)
-    return provider
-  }
+const factories: Record<ProviderName, () => Provider> = {
+  gemini: () => new GeminiProvider(),
+  claude: () => new ClaudeProvider(),
 }
 
 export function getProvider(name: ProviderName): Provider {
-  return ProviderRegistry.getInstance().get(name)
+  const make = factories[name]
+  if (!make) throw new Error(`未対応のプロバイダーです: ${name}`)
+  return make()
 }
 
 export function isProviderConfigured(storage: ConfigStore): boolean {
@@ -49,7 +40,7 @@ export function saveProviderConfig(storage: ConfigStore, name: ProviderName, api
 }
 
 export function resolveProvider(storage: ConfigStore): ProviderAgent {
-  const name = (storage.getConfig(PROVIDER_KEY) ?? 'gemini') as ProviderName
+  const name = (storage.getConfig(PROVIDER_KEY) ?? DEFAULT_PROVIDER) as ProviderName
   const provider = getProvider(name)
 
   if (!requiresApiKey(name)) return provider.setup()
