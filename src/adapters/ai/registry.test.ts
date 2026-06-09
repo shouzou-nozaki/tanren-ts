@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isProviderConfigured, saveProviderConfig, requiresApiKey } from './registry'
+import { isProviderConfigured, saveProviderConfig, getProvider } from './registry'
 import { MemoryStorage } from '../storage/memory'
 
 describe('isProviderConfigured', () => {
@@ -14,9 +14,9 @@ describe('isProviderConfigured', () => {
   })
 })
 
-describe('requiresApiKey', () => {
-  it('各プロバイダーの自己申告に従う', () => {
-    expect(requiresApiKey('gemini')).toBe(true)
-    expect(requiresApiKey('claude')).toBe(false)
+describe('requiresApiKey(Providerの自己申告)', () => {
+  it('Gemini はキーが要る、Claude は要らない', () => {
+    expect(getProvider('gemini').requiresApiKey).toBe(true)
+    expect(getProvider('claude').requiresApiKey).toBe(false)
   })
 })
