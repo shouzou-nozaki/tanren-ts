@@ -40,7 +40,7 @@ export function resolveProvider(storage: ConfigStore): ProviderAgent {
   const name = (storage.getConfig(PROVIDER_KEY) ?? DEFAULT_PROVIDER) as ProviderName
   const provider = getProvider(name)
 
-  if (!requiresApiKey(name)) return provider.setup()
+  if (!provider.requiresApiKey) return provider.setup()
 
   const apiKey = storage.getConfig(apiKeyName(name))
   if (!apiKey) throw new Error('APIキーが設定されていません。先に tanren setup を実行してください。')
