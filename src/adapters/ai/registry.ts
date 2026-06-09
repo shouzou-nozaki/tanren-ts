@@ -6,9 +6,6 @@ import { ClaudeProvider } from './claude'
 export const PROVIDER_NAMES = ['gemini', 'claude'] as const
 export type ProviderName = (typeof PROVIDER_NAMES)[number]
 
-// プロバイダー未設定時の既定値(設定知識なので解決ロジックから分離する)
-const DEFAULT_PROVIDER: ProviderName = 'gemini'
-
 const PROVIDER_KEY = 'provider'
 const apiKeyName = (name: ProviderName) => `${name}_api_key`
 
@@ -33,7 +30,8 @@ export function saveProviderConfig(storage: ConfigStore, name: ProviderName, api
 }
 
 export function resolveProvider(storage: ConfigStore): ProviderAgent {
-  const name = (storage.getConfig(PROVIDER_KEY) ?? DEFAULT_PROVIDER) as ProviderName
+  const name = storage.getConfig(PROVIDER_KEY) as ProviderName | null
+  if (!name) throw new Error('プロバイダーが設定されていません。先に tanren setup を実行してください。')
   const provider = getProvider(name)
 
   if (!provider.requiresApiKey) return provider.setup()

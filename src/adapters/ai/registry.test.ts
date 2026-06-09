@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isProviderConfigured, saveProviderConfig, getProvider } from './registry'
+import { isProviderConfigured, saveProviderConfig, getProvider, resolveProvider } from './registry'
 import { MemoryStorage } from '../storage/memory'
 
 describe('isProviderConfigured', () => {
@@ -18,5 +18,11 @@ describe('requiresApiKey(Providerの自己申告)', () => {
   it('Gemini はキーが要る、Claude は要らない', () => {
     expect(getProvider('gemini').requiresApiKey).toBe(true)
     expect(getProvider('claude').requiresApiKey).toBe(false)
+  })
+})
+
+describe('resolveProvider', () => {
+  it('プロバイダー未設定なら setup を促す例外を投げる', () => {
+    expect(() => resolveProvider(new MemoryStorage())).toThrow('tanren setup')
   })
 })
