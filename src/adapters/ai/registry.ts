@@ -12,10 +12,6 @@ const DEFAULT_PROVIDER: ProviderName = 'gemini'
 const PROVIDER_KEY = 'provider'
 const apiKeyName = (name: ProviderName) => `${name}_api_key`
 
-export function requiresApiKey(name: ProviderName): boolean {
-  return getProvider(name).requiresApiKey
-}
-
 const factories: Record<ProviderName, () => Provider> = {
   gemini: () => new GeminiProvider(),
   claude: () => new ClaudeProvider(),

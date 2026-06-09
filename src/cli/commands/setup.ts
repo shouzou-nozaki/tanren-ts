@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { input, select } from '@inquirer/prompts'
 import type { AxisStore, ConfigStore } from '../../core/ports/storage'
-import { saveProviderConfig, requiresApiKey } from '../../adapters/ai/registry'
+import { saveProviderConfig, getProvider } from '../../adapters/ai/registry'
 import { PROVIDER_NAMES, type ProviderName } from '../container'
 
 export async function setupCommand(storage: AxisStore & ConfigStore): Promise<void> {
@@ -16,7 +16,7 @@ export async function setupCommand(storage: AxisStore & ConfigStore): Promise<vo
   })
 
   let apiKey: string | undefined
-  if (requiresApiKey(provider)) {
+  if (getProvider(provider).requiresApiKey) {
     apiKey = (
       await input({
         message: `${provider} APIキー: `,
