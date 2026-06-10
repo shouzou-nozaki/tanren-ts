@@ -9,6 +9,9 @@ import { reportCommand } from './commands/report'
 import { historyCommand } from './commands/history'
 import { actionsCommand } from './commands/actions'
 
+declare const __APP_VERSION__: string
+const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0-dev'
+
 const { storage, buildProvider } = buildContainer()
 
 // 初回(プロバイダ未設定)は対話があればセットアップへ誘導する。非対話なら素通りし後段のエラーに委ねる
@@ -91,7 +94,7 @@ async function runMenu(): Promise<void> {
 program
   .name('tanren')
   .description('Technical Agent for Nurturing & Reinforcing Engineering Navigation')
-  .version('0.1.0')
+  .version(version)
 
 program
   .command('setup')
