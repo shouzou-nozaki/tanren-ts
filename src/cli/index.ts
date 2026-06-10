@@ -19,32 +19,72 @@ async function ensureConfigured(): Promise<void> {
   await setupCommand(storage)
 }
 
-async function runAsk(): Promise<void> {
+type Command = 'ask' | 'report' | 'actions' | 'history' | 'setup'
+
+// 各コマンドを実行する。エラーは投げ、終了の判断は呼び出し側に委ねる
+async function dispatch(command: Command): Promise<void> {
+  switch (command) {
+    case 'ask':
+      await ensureConfigured()
+      await askCommand(buildProvider(), storage)
+      break
+    case 'report':
+      await ensureConfigured()
+      await reportCommand(buildProvider(), storage)
+      break
+    case 'actions':
+      actionsCommand(storage)
+      break
+    case 'history':
+      historyCommand(storage)
+      break
+    case 'setup':
+      await setupCommand(storage)
+      break
+  }
+}
+
+const isCancel = (e: unknown): boolean => (e as Error)?.name === 'ExitPromptError'
+
+// 引数つきの直叩き: 一発実行して終わる。エラーは終了コード1で抜ける
+async function oneShot(run: () => Promise<void> | void): Promise<void> {
   try {
-    await ensureConfigured()
-    await askCommand(buildProvider(), storage)
+    await run()
   } catch (e) {
     console.log(chalk.red((e as Error).message))
     process.exit(1)
   }
 }
 
-async function runReport(): Promise<void> {
-  try {
-    await ensureConfigured()
-    await reportCommand(buildProvider(), storage)
-  } catch (e) {
-    console.log(chalk.red((e as Error).message))
-    process.exit(1)
-  }
-}
+// 引数なし: メニューをループし、tanren の中で作業し続けられるようにする
+async function runMenu(): Promise<void> {
+  while (true) {
+    let command: Command | 'quit'
+    try {
+      command = await select<Command | 'quit'>({
+        message: 'tanren',
+        choices: [
+          { name: '💬 壁打ち', value: 'ask' },
+          { name: '📊 実力解析', value: 'report' },
+          { name: '🎯 次のアクション', value: 'actions' },
+          { name: '📚 レポート履歴', value: 'history' },
+          { name: '🔧 セットアップ', value: 'setup' },
+          { name: '🚪 終了', value: 'quit' },
+        ],
+      })
+    } catch (e) {
+      if (isCancel(e)) break // メニューで Ctrl+C → 終了
+      throw e
+    }
 
-function runHistory(id?: string): void {
-  try {
-    historyCommand(storage, id !== undefined ? Number(id) : undefined)
-  } catch (e) {
-    console.log(chalk.red((e as Error).message))
-    process.exit(1)
+    if (command === 'quit') break
+
+    try {
+      await dispatch(command)
+    } catch (e) {
+      if (isCancel(e)) continue // プロンプトのキャンセルはメニューに戻るだけ
+      console.log(chalk.red((e as Error).message)) // エラーでもシェルは止めない
+    }
   }
 }
 
@@ -56,45 +96,30 @@ program
 program
   .command('setup')
   .description('初期設定')
-  .action(() => setupCommand(storage))
+  .action(() => oneShot(() => setupCommand(storage)))
 
 program
   .command('ask')
   .description('壁打ちセッションを開始する')
-  .action(runAsk)
+  .action(() => oneShot(() => dispatch('ask')))
 
 program
   .command('report')
   .description('壁打ち履歴から実力を解析する')
-  .action(runReport)
+  .action(() => oneShot(() => dispatch('report')))
 
 program
   .command('history [id]')
   .description('過去の解析レポートを閲覧する')
-  .action(runHistory)
+  .action((id?: string) =>
+    oneShot(() => historyCommand(storage, id !== undefined ? Number(id) : undefined))
+  )
 
 program
   .command('actions')
   .description('次に取り組むべきことを表示する')
-  .action(() => actionsCommand(storage))
+  .action(() => oneShot(() => actionsCommand(storage)))
 
-program.action(async () => {
-  const command = await select({
-    message: 'tanren',
-    choices: [
-      { name: '💬 壁打ち', value: 'ask' },
-      { name: '📊 実力解析', value: 'report' },
-      { name: '🎯 次のアクション', value: 'actions' },
-      { name: '📚 レポート履歴', value: 'history' },
-      { name: '🔧 セットアップ', value: 'setup' },
-    ],
-  })
-
-  if (command === 'ask') await runAsk()
-  if (command === 'report') await runReport()
-  if (command === 'actions') actionsCommand(storage)
-  if (command === 'history') runHistory()
-  if (command === 'setup') await setupCommand(storage)
-})
+program.action(() => runMenu())
 
 program.parse()
