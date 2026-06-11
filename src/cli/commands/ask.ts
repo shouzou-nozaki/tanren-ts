@@ -1,16 +1,16 @@
 import chalk from 'chalk'
-import { input } from '@inquirer/prompts'
 import type { ProviderAgent } from '../../core/ports/ai-provider'
 import type { Storage } from '../../core/ports/storage'
 import { chat, RECENT_TURNS } from '../../core/usecases/chat'
 import { formatRecap } from '../format'
+import { readMultilineInput } from '../input'
 
 export async function askCommand(provider: ProviderAgent, storage: Storage): Promise<void> {
   console.log(chalk.cyan('\n💬 tanren 壁打ちセッション'))
   if (provider.capabilities.readsLocalSource) {
     console.log(chalk.gray('コードのパスを貼れば読んで議論します'))
   }
-  console.log(chalk.gray('終了するには Ctrl+C\n'))
+  console.log(chalk.gray('改行で続けて空行(Enter2回)で送信 / 終了は Ctrl+C\n'))
 
   // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
   const recent = storage.getRecentSessions(RECENT_TURNS)
@@ -21,14 +21,9 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
   }
 
   while (true) {
-    let userInput: string
-    try {
-      userInput = await input({ message: chalk.green('あなた: ') })
-    } catch (e) {
-      // プロンプトでの Ctrl+C は正常終了として扱う
-      if ((e as Error).name === 'ExitPromptError') break
-      throw e
-    }
+    // Ctrl+C / EOF は null。壁打ちを抜けてメニューへ戻す
+    const userInput = await readMultilineInput('あなた: ')
+    if (userInput === null) break
     if (!userInput.trim()) continue
 
     process.stdout.write(chalk.blue('\nコーチ: '))
