@@ -2,7 +2,8 @@ import chalk from 'chalk'
 import { input } from '@inquirer/prompts'
 import type { ProviderAgent } from '../../core/ports/ai-provider'
 import type { Storage } from '../../core/ports/storage'
-import { chat } from '../../core/usecases/chat'
+import { chat, RECENT_TURNS } from '../../core/usecases/chat'
+import { formatRecap } from '../format'
 
 export async function askCommand(provider: ProviderAgent, storage: Storage): Promise<void> {
   console.log(chalk.cyan('\n💬 tanren 壁打ちセッション'))
@@ -10,6 +11,14 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
     console.log(chalk.gray('コードのパスを貼れば読んで議論します'))
   }
   console.log(chalk.gray('終了するには Ctrl+C\n'))
+
+  // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
+  const recent = storage.getRecentSessions(RECENT_TURNS)
+  if (recent.length > 0) {
+    console.log(chalk.gray('── これまでの会話 ──'))
+    console.log(chalk.gray(formatRecap(recent)))
+    console.log(chalk.gray('────────────────\n'))
+  }
 
   while (true) {
     let userInput: string
