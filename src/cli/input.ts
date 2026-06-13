@@ -109,7 +109,27 @@ export function readMultilineInput(label: string): Promise<string | null> {
           const rest = pending.slice(i)
           // ペーストマーカーの途中かもしれない。続きを待つ
           if (PASTE_START.startsWith(rest) || PASTE_END.startsWith(rest)) break
-          // それ以外のCSI列（矢印キー等）はまとめて読み飛ばす
+          // KittyキーボードプロトコルではEnterやBackspaceがCSI-u列で届く
+          const key = parseCsiU(rest)
+          if (key === 'incomplete') break
+          if (key) {
+            if (key.code === 13) {
+              // Shift+Enter は改行、ただのEnterは送信
+              if (key.shift) {
+                buffer += '\n'
+                echo('\n')
+              } else {
+                echo('\n')
+                finish(buffer)
+              }
+            } else if (key.code === 127 || key.code === 8) {
+              handleChar('\x7f')
+            }
+            // それ以外のCSI-uキーは無視する
+            i += key.consumed
+            continue
+          }
+          // 矢印キー等の残りのCSI列はまとめて読み飛ばす
           const consumed = skipEscape(rest)
           if (consumed === -1) break // 未完。続きを待つ
           i += consumed
@@ -136,6 +156,20 @@ export function readMultilineInput(label: string): Promise<string | null> {
     // パイプ入力などでEOFに達したとき。溜まっていれば送信、無ければ null
     stdin.once('end', () => finish(buffer.length > 0 ? buffer : null))
   })
+}
+
+// \x1b[<code>u / \x1b[<code>;<mods>u 形式のCSI-uキーを解読する
+function parseCsiU(
+  rest: string
+): { code: number; shift: boolean; consumed: number } | 'incomplete' | null {
+  const m = rest.match(/^\x1b\[(\d+)(?:;(\d+))?u/)
+  if (m) {
+    const mods = m[2] ? Number(m[2]) : 1
+    return { code: Number(m[1]), shift: ((mods - 1) & 1) !== 0, consumed: m[0].length }
+  }
+  // まだ途中（\x1b / \x1b[13 / \x1b[13; など）なら続きを待つ
+  if (/^\x1b(\[\d*(;\d*)?)?$/.test(rest)) return 'incomplete'
+  return null
 }
 
 // ESC で始まるCSI/SS3列を読み飛ばす。消費した文字数、未完なら -1 を返す
