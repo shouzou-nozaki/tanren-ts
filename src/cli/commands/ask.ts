@@ -10,7 +10,9 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
   if (provider.capabilities.readsLocalSource) {
     console.log(chalk.gray('コードのパスを貼れば読んで議論します'))
   }
-  console.log(chalk.gray('Enterで送信 / 改行入りの文章はそのまま貼り付けOK / 終了は Ctrl+C\n'))
+  console.log(
+    chalk.gray('Enterで送信 / 改行は Shift+Enter か Ctrl+J / 貼り付けは複数行OK / 終了は Ctrl+C\n')
+  )
 
   // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
   const recent = storage.getRecentSessions(RECENT_TURNS)
