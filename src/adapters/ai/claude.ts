@@ -3,7 +3,7 @@ import type { Provider, ProviderAgent, Message } from '../../core/ports/ai-provi
 
 // パスが渡されたら推測で語らず実際に読ませる(Claude Agent SDK のツール利用前提)
 const TOOL_HINT =
-  '\n\nファイルやディレクトリのパスが示されたら、推測で語らず Read・Grep・Glob で実際に中身を読んでから具体的に答えてください。コードの変更や差分について問われたら、git diff・git log など読み取り専用の git で実際の変更を確認してください。ファイルの編集や git の書き込み操作はできません。'
+  '\n\nファイルやディレクトリのパスが示されたら、推測で語らず Read・Grep・Glob で実際に中身を読んでから具体的に答えてください。コードの変更や差分について問われたら、git diff・git log など読み取り専用の git で実際の変更を確認してください。\n\nあなたが実行できるのは Read・Grep・Glob と、読み取り専用の git（diff・log・show・status など）だけです。ファイルの編集、git の書き込み（add・commit・push など）、tsc・npm・テスト・ビルドといった git 以外のコマンドは一切実行できません。これらは自分で実行できる前提で提案せず、必要ならユーザーが行う手順として案内するにとどめてください。'
 
 // コーチに許可する読み取り専用の git サブコマンド
 const READONLY_GIT = new Set([
