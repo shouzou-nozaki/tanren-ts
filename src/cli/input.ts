@@ -7,6 +7,10 @@ const PASTE_ENABLE = '\x1b[?2004h'
 const PASTE_DISABLE = '\x1b[?2004l'
 const PASTE_START = '\x1b[200~'
 const PASTE_END = '\x1b[201~'
+// Kittyキーボードプロトコル。flag 1（曖昧解消）を要求すると、対応端末は
+// Shift+Enter を CSI-u（\x1b[13;2u）で報告する。素の Enter は \r のまま
+const KITTY_ENABLE = '\x1b[>1u'
+const KITTY_DISABLE = '\x1b[<u'
 
 // 通常時の Enter で送信。ペースト中の改行は文字として取り込むので、
 // 改行や空行を含む文章でも丸ごと貼れる。Ctrl+C / 空のままEOF はキャンセルで null
@@ -18,6 +22,7 @@ export function readMultilineInput(label: string): Promise<string | null> {
 
   let buffer = ''
   let pasting = false
+  let wasRaw = false // 入室前の raw 状態。退室時にここへ戻す
   let pending = '' // エスケープ列がチャンク跨ぎで途切れたとき用に溜める
 
   const echo = (s: string): void => {
@@ -31,7 +36,8 @@ export function readMultilineInput(label: string): Promise<string | null> {
       stdin.removeListener('data', onData)
       if (interactive) {
         out.write(PASTE_DISABLE)
-        if (stdin.isTTY) stdin.setRawMode(false)
+        out.write(KITTY_DISABLE)
+        if (stdin.isTTY) stdin.setRawMode(wasRaw)
       }
       try {
         stdin.pause()
@@ -148,8 +154,10 @@ export function readMultilineInput(label: string): Promise<string | null> {
 
     echo(chalk.green(label))
     if (interactive) {
+      wasRaw = Boolean(stdin.isRaw)
       if (stdin.isTTY) stdin.setRawMode(true)
       out.write(PASTE_ENABLE)
+      out.write(KITTY_ENABLE)
     }
     stdin.resume()
     stdin.on('data', onData)
