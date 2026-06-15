@@ -135,6 +135,10 @@ axes:
 └── axes.yaml       # 解析する能力軸
 ```
 
+## 開発・設計
+
+コードの構造・設計判断・既知の割り切りは [ARCHITECTURE.md](./ARCHITECTURE.md) にまとめています。
+
 ## ライセンス
 
 MIT — 詳細は [LICENSE](./LICENSE) を参照してください。
