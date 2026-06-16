@@ -8,6 +8,7 @@ import { askCommand } from './commands/ask'
 import { reportCommand } from './commands/report'
 import { historyCommand } from './commands/history'
 import { actionsCommand } from './commands/actions'
+import { axesCommand } from './commands/axes'
 
 declare const __APP_VERSION__: string
 const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0-dev'
@@ -22,7 +23,7 @@ async function ensureConfigured(): Promise<void> {
   await setupCommand(storage)
 }
 
-type Command = 'ask' | 'report' | 'actions' | 'history' | 'setup'
+type Command = 'ask' | 'report' | 'actions' | 'history' | 'axes' | 'setup'
 
 // 各コマンドを実行する。エラーは投げ、終了の判断は呼び出し側に委ねる
 async function dispatch(command: Command): Promise<void> {
@@ -40,6 +41,9 @@ async function dispatch(command: Command): Promise<void> {
       break
     case 'history':
       historyCommand(storage)
+      break
+    case 'axes':
+      await axesCommand(storage)
       break
     case 'setup':
       await setupCommand(storage)
@@ -71,6 +75,7 @@ async function runMenu(): Promise<void> {
           { name: '📊 実力解析', value: 'report' },
           { name: '🎯 次のアクション', value: 'actions' },
           { name: '📚 レポート履歴', value: 'history' },
+          { name: '🎯 能力を設定', value: 'axes' },
           { name: '🔧 セットアップ', value: 'setup' },
           { name: '🚪 終了', value: 'quit' },
         ],
@@ -122,6 +127,11 @@ program
   .command('actions')
   .description('次に取り組むべきことを表示する')
   .action(() => oneShot(() => actionsCommand(storage)))
+
+program
+  .command('axes')
+  .description('伸ばす能力（軸）を設定する')
+  .action(() => oneShot(() => axesCommand(storage)))
 
 program.action(() => runMenu())
 
