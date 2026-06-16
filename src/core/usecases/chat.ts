@@ -35,7 +35,8 @@ export async function chat(
   provider: ProviderAgent,
   storage: SessionStore & AxisStore,
   onChunk: (text: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  focusAxes?: Axis[]
 ): Promise<void> {
   const recent = storage.getRecentSessions(RECENT_TURNS)
 
@@ -45,8 +46,11 @@ export async function chat(
 
   const messages: Message[] = [...history, { role: 'user', content: userInput }]
 
+  // 今セッションのフォーカス軸が指定されればそれで、無ければ設定済み全軸で掘る
+  const axes = focusAxes ?? storage.getAxes()
+
   // 中断・失敗時はここで例外が伝播し、保存はスキップされる
-  const response = await provider.chatStream(buildSystemPrompt(storage.getAxes()), messages, onChunk, signal)
+  const response = await provider.chatStream(buildSystemPrompt(axes), messages, onChunk, signal)
 
   storage.saveSession([
     { role: 'user', content: userInput },

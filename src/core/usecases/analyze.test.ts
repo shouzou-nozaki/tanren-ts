@@ -277,6 +277,27 @@ describe('analyze', () => {
 
     expect(result[0].score).toBe(3)
   })
+
+  it('未解析の軸は全履歴を対象にし、新規材料の無い軸はスキップする', async () => {
+    vi.useFakeTimers()
+    at('2026-01-01T00:00:00Z')
+    const s = new MemoryStorage()
+    s.saveAxes([AXES[0]]) // a のみ
+    s.saveSession([{ role: 'user', content: '古い-OLD' }])
+
+    at('2026-01-01T01:00:00Z')
+    await analyze(recordingProvider().provider, s, noopHandlers) // R1（a を含む）
+
+    at('2026-01-01T02:00:00Z')
+    s.saveAxes(AXES) // a + b に増やす
+    const { provider, calls } = recordingProvider()
+    const result = await analyze(provider, s, noopHandlers)
+
+    // a は前回(01:00)以降の新規が無いのでスキップ。b は初解析で全履歴(OLD)を見る
+    expect(result.map((r) => r.axis)).toEqual(['b'])
+    const bCall = calls.find((c) => c.system.includes('Bの力'))!
+    expect(bCall.user).toContain('OLD')
+  })
 })
 
 describe('parseScore', () => {

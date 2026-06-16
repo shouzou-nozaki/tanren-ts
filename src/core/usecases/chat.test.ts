@@ -35,6 +35,17 @@ describe('chat', () => {
     expect(calls[0].system).toContain('Bの力')
   })
 
+  it('フォーカス軸を渡すとその軸だけをシステムプロンプトに織り込む', async () => {
+    const s = new MemoryStorage()
+    s.saveAxes(AXES)
+    const { provider, calls } = recordingProvider()
+
+    await chat('質問', provider, s, () => {}, undefined, [AXES[0]])
+
+    expect(calls[0].system).toContain('Aの力')
+    expect(calls[0].system).not.toContain('Bの力')
+  })
+
   it('やり取りをセッションとして保存する', async () => {
     const s = new MemoryStorage()
     s.saveAxes(AXES)

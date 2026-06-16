@@ -1,6 +1,7 @@
 import chalk from 'chalk'
+import { checkbox } from '@inquirer/prompts'
 import type { ProviderAgent } from '../../core/ports/ai-provider'
-import type { Storage } from '../../core/ports/storage'
+import type { Axis, Storage } from '../../core/ports/storage'
 import { chat, RECENT_TURNS } from '../../core/usecases/chat'
 import { formatRecap } from '../format'
 import { readMultilineInput } from '../input'
@@ -13,6 +14,10 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
   console.log(
     chalk.gray('Enterで送信 / 改行は Shift+Enter か Ctrl+J / 貼り付けは複数行OK / 終了は Ctrl+C\n')
   )
+
+  // 設定済みの軸から今回フォーカスするものを選ぶ。コーチはその軸を重点的に掘る
+  const focusAxes = await selectFocusAxes(storage.getAxes())
+  console.log(chalk.gray(`今回のフォーカス: ${focusAxes.map((a) => a.label).join(' / ')}\n`))
 
   // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
   const recent = storage.getRecentSessions(RECENT_TURNS)
@@ -29,11 +34,27 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
     if (!userInput.trim()) continue
 
     process.stdout.write(chalk.blue('\nコーチ: '))
-    await runTurn(userInput, provider, storage)
+    await runTurn(userInput, provider, storage, focusAxes)
   }
 }
 
-async function runTurn(userInput: string, provider: ProviderAgent, storage: Storage): Promise<void> {
+// 設定済みの軸が複数あれば今回フォーカスするものを選ばせる。1つなら選択を省く
+async function selectFocusAxes(axes: Axis[]): Promise<Axis[]> {
+  if (axes.length <= 1) return axes
+  const keys = await checkbox({
+    message: '今回フォーカスする能力を選んでください',
+    choices: axes.map((a) => ({ name: a.label, value: a.key, checked: true })),
+    required: true,
+  })
+  return axes.filter((a) => keys.includes(a.key))
+}
+
+async function runTurn(
+  userInput: string,
+  provider: ProviderAgent,
+  storage: Storage,
+  focusAxes: Axis[]
+): Promise<void> {
   const controller = new AbortController()
   let interrupts = 0
   const onSigint = (): void => {
@@ -48,7 +69,14 @@ async function runTurn(userInput: string, provider: ProviderAgent, storage: Stor
   process.on('SIGINT', onSigint)
 
   try {
-    await chat(userInput, provider, storage, (chunk) => process.stdout.write(chunk), controller.signal)
+    await chat(
+      userInput,
+      provider,
+      storage,
+      (chunk) => process.stdout.write(chunk),
+      controller.signal,
+      focusAxes
+    )
     console.log('\n')
   } catch (e) {
     if (controller.signal.aborted) {
