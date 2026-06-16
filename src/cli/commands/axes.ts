@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { input, confirm } from '@inquirer/prompts'
+import { input, confirm, select } from '@inquirer/prompts'
 import type { Axis, AxisStore } from '../../core/ports/storage'
 import { DEFAULT_AXES } from '../../core/axes'
 
@@ -7,7 +7,28 @@ const MAX_AXES = 5
 
 export async function axesCommand(storage: AxisStore): Promise<void> {
   console.log(chalk.cyan('\n🎯 伸ばす能力（軸）の設定\n'))
-  console.log(chalk.gray('能力名を空にするとその軸を削除します。focus はその軸で何を見るかの観点です。\n'))
+
+  const action = await select({
+    message: '何をしますか？',
+    choices: [
+      { name: '軸を編集する', value: 'edit' },
+      { name: 'デフォルトに戻す', value: 'reset' },
+    ],
+  })
+
+  if (action === 'reset') {
+    if (!(await confirm({ message: '現在の軸を破棄してデフォルトに戻します。よろしいですか？', default: false }))) {
+      console.log(chalk.gray('\n中止しました。\n'))
+      return
+    }
+    storage.saveAxes(DEFAULT_AXES)
+    console.log(chalk.green('\n✅ デフォルトの軸に戻しました'))
+    for (const a of DEFAULT_AXES) console.log(`  - ${a.label}`)
+    console.log()
+    return
+  }
+
+  console.log(chalk.gray('\n能力名を空にするとその軸を削除します。focus はその軸で何を見るかの観点です。\n'))
 
   const current = storage.getAxes()
   const result: Axis[] = []
