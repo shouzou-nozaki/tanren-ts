@@ -1,5 +1,5 @@
 import type { ProviderAgent, Message } from '../ports/ai-provider'
-import type { Axis, AxisStore, SessionStore } from '../ports/storage'
+import type { Axis, SessionStore } from '../ports/storage'
 
 // コーチが文脈として読む直近の往復数。ask の入室時リキャップも同じ窓を見る
 export const RECENT_TURNS = 5
@@ -33,10 +33,10 @@ ${lens}
 export async function chat(
   userInput: string,
   provider: ProviderAgent,
-  storage: SessionStore & AxisStore,
+  storage: SessionStore,
+  axes: Axis[],
   onChunk: (text: string) => void,
-  signal?: AbortSignal,
-  focusAxes?: Axis[]
+  signal?: AbortSignal
 ): Promise<void> {
   const recent = storage.getRecentSessions(RECENT_TURNS)
 
@@ -46,10 +46,7 @@ export async function chat(
 
   const messages: Message[] = [...history, { role: 'user', content: userInput }]
 
-  // 今セッションのフォーカス軸が指定されればそれで、無ければ設定済み全軸で掘る
-  const axes = focusAxes ?? storage.getAxes()
-
-  // 中断・失敗時はここで例外が伝播し、保存はスキップされる
+  // どの軸で掘るかは呼び出し側が決める。中断・失敗時はここで例外が伝播し保存はスキップ
   const response = await provider.chatStream(buildSystemPrompt(axes), messages, onChunk, signal)
 
   storage.saveSession([

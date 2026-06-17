@@ -73,9 +73,9 @@ async function runTurn(
       userInput,
       provider,
       storage,
+      focusAxes,
       (chunk) => process.stdout.write(chunk),
-      controller.signal,
-      focusAxes
+      controller.signal
     )
     console.log('\n')
   } catch (e) {

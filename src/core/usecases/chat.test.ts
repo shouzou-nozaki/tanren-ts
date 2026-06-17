@@ -25,10 +25,9 @@ function recordingProvider(): { provider: ProviderAgent; calls: { system: string
 describe('chat', () => {
   it('軸定義をコーチのシステムプロンプトに織り込む', async () => {
     const s = new MemoryStorage()
-    s.saveAxes(AXES)
     const { provider, calls } = recordingProvider()
 
-    await chat('質問', provider, s, () => {})
+    await chat('質問', provider, s, AXES, () => {})
 
     expect(calls[0].system).toContain('Aの力')
     expect(calls[0].system).toContain('Aの観点を掘る')
@@ -37,10 +36,9 @@ describe('chat', () => {
 
   it('フォーカス軸を渡すとその軸だけをシステムプロンプトに織り込む', async () => {
     const s = new MemoryStorage()
-    s.saveAxes(AXES)
     const { provider, calls } = recordingProvider()
 
-    await chat('質問', provider, s, () => {}, undefined, [AXES[0]])
+    await chat('質問', provider, s, [AXES[0]], () => {})
 
     expect(calls[0].system).toContain('Aの力')
     expect(calls[0].system).not.toContain('Bの力')
@@ -48,10 +46,9 @@ describe('chat', () => {
 
   it('やり取りをセッションとして保存する', async () => {
     const s = new MemoryStorage()
-    s.saveAxes(AXES)
     const { provider } = recordingProvider()
 
-    await chat('質問', provider, s, () => {})
+    await chat('質問', provider, s, AXES, () => {})
 
     const sessions = s.getAllSessions()
     expect(sessions).toHaveLength(1)
