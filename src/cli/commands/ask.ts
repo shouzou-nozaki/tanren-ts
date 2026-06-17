@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { checkbox } from '@inquirer/prompts'
+import { select } from '@inquirer/prompts'
 import type { ProviderAgent } from '../../core/ports/ai-provider'
 import type { Axis, Storage } from '../../core/ports/storage'
 import { chat, RECENT_TURNS } from '../../core/usecases/chat'
@@ -15,9 +15,9 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
     chalk.gray('Enterで送信 / 改行は Shift+Enter か Ctrl+J / 貼り付けは複数行OK / 終了は Ctrl+C\n')
   )
 
-  // 設定済みの軸から今回フォーカスするものを選ぶ。コーチはその軸を重点的に掘る
-  const focusAxes = await selectFocusAxes(storage.getAxes())
-  console.log(chalk.gray(`今回のフォーカス: ${focusAxes.map((a) => a.label).join(' / ')}\n`))
+  // 設定済みの軸から今回フォーカスする1つを選ぶ。コーチはその軸を重点的に掘る
+  const focusAxis = await selectFocusAxis(storage.getAxes())
+  console.log(chalk.gray(`今回のフォーカス: ${focusAxis.label}\n`))
 
   // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
   const recent = storage.getRecentSessions(RECENT_TURNS)
@@ -34,26 +34,25 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
     if (!userInput.trim()) continue
 
     process.stdout.write(chalk.blue('\nコーチ: '))
-    await runTurn(userInput, provider, storage, focusAxes)
+    await runTurn(userInput, provider, storage, focusAxis)
   }
 }
 
-// 設定済みの軸が複数あれば今回フォーカスするものを選ばせる。1つなら選択を省く
-async function selectFocusAxes(axes: Axis[]): Promise<Axis[]> {
-  if (axes.length <= 1) return axes
-  const keys = await checkbox({
+// 設定済みの軸が複数あれば今回フォーカスする1つを選ばせる。1つなら選択を省く
+async function selectFocusAxis(axes: Axis[]): Promise<Axis> {
+  if (axes.length === 1) return axes[0]
+  const key = await select({
     message: '今回フォーカスする能力を選んでください',
-    choices: axes.map((a) => ({ name: a.label, value: a.key, checked: true })),
-    required: true,
+    choices: axes.map((a) => ({ name: a.label, value: a.key })),
   })
-  return axes.filter((a) => keys.includes(a.key))
+  return axes.find((a) => a.key === key) ?? axes[0]
 }
 
 async function runTurn(
   userInput: string,
   provider: ProviderAgent,
   storage: Storage,
-  focusAxes: Axis[]
+  focusAxis: Axis
 ): Promise<void> {
   const controller = new AbortController()
   let interrupts = 0
@@ -73,7 +72,7 @@ async function runTurn(
       userInput,
       provider,
       storage,
-      focusAxes,
+      focusAxis,
       (chunk) => process.stdout.write(chunk),
       controller.signal
     )

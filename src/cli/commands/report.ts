@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { checkbox } from '@inquirer/prompts'
+import { select } from '@inquirer/prompts'
 import type { ProviderAgent } from '../../core/ports/ai-provider'
 import type { Axis, Storage } from '../../core/ports/storage'
 import { analyze } from '../../core/usecases/analyze'
@@ -7,8 +7,8 @@ import { analyze } from '../../core/usecases/analyze'
 export async function reportCommand(provider: ProviderAgent, storage: Storage): Promise<void> {
   console.log(chalk.cyan('\n📊 tanren 実力解析'))
 
-  // 設定済みの軸から解析するものを選ぶ
-  const targetAxes = await selectAxes(storage.getAxes())
+  // 設定済みの軸から解析する1つを選ぶ
+  const targetAxis = await selectAxis(storage.getAxes())
   console.log(chalk.gray('履歴を解析しています...\n'))
 
   const controller = new AbortController()
@@ -34,7 +34,7 @@ export async function reportCommand(provider: ProviderAgent, storage: Storage): 
           console.log(chalk.gray(`（${label}: 前回以降の新しい壁打ちが無いためスキップ）`)),
       },
       controller.signal,
-      targetAxes
+      [targetAxis]
     )
     console.log('\n')
   } catch (e) {
@@ -48,13 +48,12 @@ export async function reportCommand(provider: ProviderAgent, storage: Storage): 
   }
 }
 
-// 設定済みの軸が複数あれば解析するものを選ばせる。1つなら選択を省く
-async function selectAxes(axes: Axis[]): Promise<Axis[]> {
-  if (axes.length <= 1) return axes
-  const keys = await checkbox({
+// 設定済みの軸が複数あれば解析する1つを選ばせる。1つなら選択を省く
+async function selectAxis(axes: Axis[]): Promise<Axis> {
+  if (axes.length === 1) return axes[0]
+  const key = await select({
     message: '解析する能力を選んでください',
-    choices: axes.map((a) => ({ name: a.label, value: a.key, checked: true })),
-    required: true,
+    choices: axes.map((a) => ({ name: a.label, value: a.key })),
   })
-  return axes.filter((a) => keys.includes(a.key))
+  return axes.find((a) => a.key === key) ?? axes[0]
 }
