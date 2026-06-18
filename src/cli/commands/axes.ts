@@ -8,6 +8,9 @@ const MAX_AXES = 5
 export async function axesCommand(storage: AxisStore): Promise<void> {
   console.log(chalk.cyan('\n🎯 伸ばす能力（軸）の設定\n'))
 
+  // 何をするか選ぶ前に、今の設定を一覧で見せる
+  printAxes(storage.getAxes())
+
   const action = await select({
     message: '何をしますか？',
     choices: [
@@ -34,7 +37,8 @@ export async function axesCommand(storage: AxisStore): Promise<void> {
   const result: Axis[] = []
 
   // 既存の軸を1つずつ編集する。key は履歴の連続性のため維持する
-  for (const axis of current) {
+  for (const [i, axis] of current.entries()) {
+    console.log(chalk.bold(`\n[${i + 1}/${current.length}] ${axis.label}`))
     const label = (await input({ message: '能力名', default: axis.label })).trim()
     if (!label) {
       console.log(chalk.gray(`  （「${axis.label}」を削除）`))
@@ -63,6 +67,16 @@ export async function axesCommand(storage: AxisStore): Promise<void> {
   storage.saveAxes(result)
   console.log(chalk.green(`\n✅ ${result.length}件の能力を保存しました`))
   for (const a of result) console.log(`  - ${a.label}`)
+  console.log()
+}
+
+// 現在の軸を label と focus つきで一覧表示する
+function printAxes(axes: Axis[]): void {
+  console.log(chalk.gray('現在の能力:'))
+  axes.forEach((a, i) => {
+    console.log(`  ${chalk.bold(`${i + 1}. ${a.label}`)}`)
+    console.log(chalk.gray(`     ${a.focus}`))
+  })
   console.log()
 }
 
