@@ -6,77 +6,94 @@ import { DEFAULT_AXES } from '../../core/axes'
 const MAX_AXES = 5
 
 export async function axesCommand(storage: AxisStore): Promise<void> {
-  console.log(chalk.cyan('\n🎯 伸ばす能力（軸）の設定\n'))
+  console.log(chalk.cyan('\n🎯 伸ばす能力（軸）の設定'))
+  console.log(chalk.gray('「保存して終了」で確定。Ctrl+C で保存せず抜けます。'))
 
-  // 何をするか選ぶ前に、今の設定を一覧で見せる
-  printAxes(storage.getAxes())
+  // 作業用コピー。保存は「保存して終了」を選んだときだけ反映する
+  let axes: Axis[] = storage.getAxes().map((a) => ({ ...a }))
 
-  const action = await select({
-    message: '何をしますか？',
-    choices: [
-      { name: '軸を編集する', value: 'edit' },
-      { name: 'デフォルトに戻す', value: 'reset' },
-    ],
-  })
+  while (true) {
+    printAxes(axes)
+    const action = await select({
+      message: 'どうしますか？',
+      choices: [
+        { name: '軸を編集する', value: 'edit' },
+        { name: '軸を追加する', value: 'add' },
+        { name: '軸を削除する', value: 'remove' },
+        { name: 'デフォルトに戻す', value: 'reset' },
+        { name: '保存して終了', value: 'save' },
+      ],
+    })
 
-  if (action === 'reset') {
-    if (!(await confirm({ message: '現在の軸を破棄してデフォルトに戻します。よろしいですか？', default: false }))) {
-      console.log(chalk.gray('\n中止しました。\n'))
+    if (action === 'save') {
+      const toSave = axes.length > 0 ? axes : DEFAULT_AXES
+      storage.saveAxes(toSave)
+      if (axes.length === 0) console.log(chalk.yellow('\n軸が空のため、デフォルトを保存しました。'))
+      console.log(chalk.green(`\n✅ ${toSave.length}件の能力を保存しました\n`))
       return
     }
-    storage.saveAxes(DEFAULT_AXES)
-    console.log(chalk.green('\n✅ デフォルトの軸に戻しました'))
-    for (const a of DEFAULT_AXES) console.log(`  - ${a.label}`)
-    console.log()
-    return
-  }
 
-  console.log(chalk.gray('\n能力名を空にするとその軸を削除します。focus はその軸で何を見るかの観点です。\n'))
-
-  const current = storage.getAxes()
-  const result: Axis[] = []
-
-  // 既存の軸を1つずつ編集する。key は履歴の連続性のため維持する
-  for (const [i, axis] of current.entries()) {
-    console.log(chalk.bold(`\n[${i + 1}/${current.length}] ${axis.label}`))
-    const label = (await input({ message: '能力名', default: axis.label })).trim()
-    if (!label) {
-      console.log(chalk.gray(`  （「${axis.label}」を削除）`))
+    if (action === 'reset') {
+      if (await confirm({ message: '現在の編集を破棄してデフォルトに戻しますか？', default: false })) {
+        axes = DEFAULT_AXES.map((a) => ({ ...a }))
+      }
       continue
     }
-    const focus = (await input({ message: '評価観点（focus）', default: axis.focus })).trim()
-    result.push({ key: axis.key, label, focus })
-  }
 
-  // 上限まで追加できる
-  while (result.length < MAX_AXES) {
-    if (!(await confirm({ message: '能力を追加する？', default: false }))) break
-    const label = (await input({ message: '能力名' })).trim()
-    if (!label) break
-    const focus = (await input({ message: '評価観点（focus）' })).trim()
-    result.push({ key: generateKey(), label, focus })
-  }
+    if (action === 'add') {
+      if (axes.length >= MAX_AXES) {
+        console.log(chalk.yellow(`\n軸は最大 ${MAX_AXES} 個までです。\n`))
+        continue
+      }
+      const label = (await input({ message: '能力名' })).trim()
+      if (!label) continue
+      const focus = (await input({ message: '評価観点（focus）' })).trim()
+      axes.push({ key: generateKey(), label, focus })
+      continue
+    }
 
-  // 全部消したらデフォルトに戻す
-  if (result.length === 0) {
-    storage.saveAxes(DEFAULT_AXES)
-    console.log(chalk.yellow('\n軸が空になったため、デフォルトに戻しました。\n'))
-    return
-  }
+    if (axes.length === 0) continue // 編集・削除する軸が無い
 
-  storage.saveAxes(result)
-  console.log(chalk.green(`\n✅ ${result.length}件の能力を保存しました`))
-  for (const a of result) console.log(`  - ${a.label}`)
-  console.log()
+    if (action === 'edit') {
+      const idx = await pickAxis(axes, '編集する軸を選んでください')
+      const target = axes[idx]
+      const label = (await input({ message: '能力名', default: target.label })).trim()
+      const focus = (await input({ message: '評価観点（focus）', default: target.focus })).trim()
+      // key は履歴の連続性のため維持する。空入力は元の値を据え置く
+      axes[idx] = { key: target.key, label: label || target.label, focus: focus || target.focus }
+      continue
+    }
+
+    if (action === 'remove') {
+      const idx = await pickAxis(axes, '削除する軸を選んでください')
+      const target = axes[idx]
+      if (await confirm({ message: `「${target.label}」を削除しますか？`, default: false })) {
+        axes.splice(idx, 1)
+      }
+    }
+  }
+}
+
+// 軸を一覧から1つ選ばせ、その添字を返す
+async function pickAxis(axes: Axis[], message: string): Promise<number> {
+  return select({
+    message,
+    choices: axes.map((a, i) => ({ name: a.label, value: i })),
+  })
 }
 
 // 現在の軸を label と focus つきで一覧表示する
 function printAxes(axes: Axis[]): void {
+  console.log()
   console.log(chalk.gray('現在の能力:'))
-  axes.forEach((a, i) => {
-    console.log(`  ${chalk.bold(`${i + 1}. ${a.label}`)}`)
-    console.log(chalk.gray(`     ${a.focus}`))
-  })
+  if (axes.length === 0) {
+    console.log(chalk.gray('  （なし）'))
+  } else {
+    axes.forEach((a, i) => {
+      console.log(`  ${chalk.bold(`${i + 1}. ${a.label}`)}`)
+      console.log(chalk.gray(`     ${a.focus}`))
+    })
+  }
   console.log()
 }
 
