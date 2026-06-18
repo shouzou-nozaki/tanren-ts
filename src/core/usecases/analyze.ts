@@ -58,12 +58,18 @@ export function parseNextActions(text: string): string[] {
 
 const SESSION_LIMIT = 20
 
-// 過去の評価は前回レポートに畳み込まれているため、生ログは「前回以降の新規ぶん」だけ送る
-function selectSessions(sessions: Session[], previous: Report | null): Session[] {
-  const fresh = previous
-    ? sessions.filter((s) => s.createdAt > previous.createdAt)
-    : sessions
+// その軸を最後に解析した時点より後の生ログだけ送る。未解析(cutoff無し)なら全件
+function selectSessionsSince(sessions: Session[], cutoff: string | undefined): Session[] {
+  const fresh = cutoff ? sessions.filter((s) => s.createdAt > cutoff) : sessions
   return fresh.slice(-SESSION_LIMIT)
+}
+
+// その軸を含む最新のレポートを新しい順に探す。軸ごとに「前回」を辿るため
+function latestReportWithAxis(reports: Report[], axisKey: string): Report | undefined {
+  for (let i = reports.length - 1; i >= 0; i--) {
+    if (reports[i].abilities.some((a) => a.axis === axisKey)) return reports[i]
+  }
+  return undefined
 }
 
 function buildTranscript(sessions: Session[]): string {
@@ -91,34 +97,40 @@ function buildPrompt(transcript: string, previous: AbilityReport | undefined): s
 type AnalyzeHandlers = {
   onAxisStart: (label: string) => void
   onChunk: (text: string) => void
+  onAxisSkip?: (label: string) => void
 }
 
 export async function analyze(
   provider: ProviderAgent,
   storage: SessionStore & ReportStore & AxisStore,
   handlers: AnalyzeHandlers,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  axes: Axis[] = storage.getAxes()
 ): Promise<Report['abilities']> {
   const sessions = storage.getAllSessions()
   if (sessions.length === 0) {
     throw new Error('解析する壁打ち履歴がありません。先に tanren ask で対話してください。')
   }
 
-  const previous = storage.getLatestReport()
-  const target = selectSessions(sessions, previous)
-  if (target.length === 0) {
-    throw new Error('前回の解析以降、新しい壁打ちがありません。先に tanren ask で対話してください。')
-  }
-
-  const transcript = buildTranscript(target)
-  const axes = storage.getAxes()
+  const reports = storage.getAllReports()
   const abilities: AbilityReport[] = []
 
+  // 軸ごとに「その軸を最後に解析して以降」の壁打ちだけを対象にする。
+  // 未解析の軸は全履歴を見る。新規の材料が無い軸はスキップ。
   // いずれかの軸で中断・失敗すれば例外が伝播し、保存はスキップされる
   for (const axis of axes) {
+    const previousReport = latestReportWithAxis(reports, axis.key)
+    const previousAxis = previousReport?.abilities.find((a) => a.axis === axis.key)
+    const target = selectSessionsSince(sessions, previousReport?.createdAt)
+    if (target.length === 0) {
+      handlers.onAxisSkip?.(axis.label)
+      continue
+    }
+
     handlers.onAxisStart(axis.label)
-    const previousAxis = previous?.abilities.find((a) => a.axis === axis.key)
-    const messages: Message[] = [{ role: 'user', content: buildPrompt(transcript, previousAxis) }]
+    const messages: Message[] = [
+      { role: 'user', content: buildPrompt(buildTranscript(target), previousAxis) },
+    ]
     const summary = await provider.chatStream(
       buildSystemPrompt(axis),
       messages,
@@ -133,6 +145,10 @@ export async function analyze(
       nextActions: parseNextActions(summary),
       score,
     })
+  }
+
+  if (abilities.length === 0) {
+    throw new Error('前回の解析以降、新しい壁打ちがありません。先に tanren ask で対話してください。')
   }
 
   storage.saveReport(abilities)

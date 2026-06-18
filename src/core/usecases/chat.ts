@@ -1,11 +1,11 @@
 import type { ProviderAgent, Message } from '../ports/ai-provider'
-import type { Axis, AxisStore, SessionStore } from '../ports/storage'
+import type { Axis, SessionStore } from '../ports/storage'
 
 // コーチが文脈として読む直近の往復数。ask の入室時リキャップも同じ窓を見る
 export const RECENT_TURNS = 5
 
-function buildSystemPrompt(axes: Axis[]): string {
-  const lens = axes.map((a) => `- ${a.label}: ${a.focus}`).join('\n')
+function buildSystemPrompt(axis: Axis): string {
+  const lens = `- ${axis.label}: ${axis.focus}`
   return `あなたは豊富な実務経験を持つシニアエンジニアリングコーチです。
 相手の成長を応援しながら、的確で実践的なアドバイスを行います。
 
@@ -33,7 +33,8 @@ ${lens}
 export async function chat(
   userInput: string,
   provider: ProviderAgent,
-  storage: SessionStore & AxisStore,
+  storage: SessionStore,
+  axis: Axis,
   onChunk: (text: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
@@ -45,8 +46,8 @@ export async function chat(
 
   const messages: Message[] = [...history, { role: 'user', content: userInput }]
 
-  // 中断・失敗時はここで例外が伝播し、保存はスキップされる
-  const response = await provider.chatStream(buildSystemPrompt(storage.getAxes()), messages, onChunk, signal)
+  // どの軸で掘るかは呼び出し側が決める。中断・失敗時はここで例外が伝播し保存はスキップ
+  const response = await provider.chatStream(buildSystemPrompt(axis), messages, onChunk, signal)
 
   storage.saveSession([
     { role: 'user', content: userInput },
