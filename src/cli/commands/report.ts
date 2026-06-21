@@ -31,7 +31,7 @@ export async function reportCommand(provider: ProviderAgent, storage: Storage): 
         onAxisStart: (label) => console.log(chalk.bold.cyan(`\n■ ${label}\n`)),
         onChunk: (chunk) => process.stdout.write(chunk),
         onAxisSkip: (label) =>
-          console.log(chalk.gray(`（${label}: 前回以降の新しい壁打ちが無いためスキップ）`)),
+          console.log(chalk.gray(`（${label}: 解析できる壁打ちが無いためスキップ）`)),
       },
       controller.signal,
       [targetAxis]

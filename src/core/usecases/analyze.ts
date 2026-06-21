@@ -108,20 +108,17 @@ export async function analyze(
   axes: Axis[] = storage.getAxes()
 ): Promise<Report['abilities']> {
   const sessions = storage.getAllSessions()
-  if (sessions.length === 0) {
-    throw new Error('解析する壁打ち履歴がありません。先に tanren ask で対話してください。')
-  }
-
   const reports = storage.getAllReports()
   const abilities: AbilityReport[] = []
 
-  // 軸ごとに「その軸を最後に解析して以降」の壁打ちだけを対象にする。
-  // 未解析の軸は全履歴を見る。新規の材料が無い軸はスキップ。
+  // 軸ごとに「その軸の会話のうち、最後に解析して以降のもの」だけを対象にする。
+  // その軸の新規の材料が無ければスキップ。
   // いずれかの軸で中断・失敗すれば例外が伝播し、保存はスキップされる
   for (const axis of axes) {
     const previousReport = latestReportWithAxis(reports, axis.key)
     const previousAxis = previousReport?.abilities.find((a) => a.axis === axis.key)
-    const target = selectSessionsSince(sessions, previousReport?.createdAt)
+    const axisSessions = sessions.filter((s) => s.axisKey === axis.key)
+    const target = selectSessionsSince(axisSessions, previousReport?.createdAt)
     if (target.length === 0) {
       handlers.onAxisSkip?.(axis.label)
       continue
@@ -148,7 +145,7 @@ export async function analyze(
   }
 
   if (abilities.length === 0) {
-    throw new Error('前回の解析以降、新しい壁打ちがありません。先に tanren ask で対話してください。')
+    throw new Error('解析できる壁打ちがありません。対象の能力で tanren ask をしてから試してください。')
   }
 
   storage.saveReport(abilities)
