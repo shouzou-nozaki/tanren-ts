@@ -23,7 +23,7 @@ const sessionsFileSchema = z.object({
           content: z.string(),
         })
       ),
-      axisKey: z.string().optional(),
+      axisKey: z.string(),
     })
   ),
 })
@@ -84,10 +84,10 @@ export class YamlStorage implements Storage {
     this.write(REPORTS_FILE, { reports })
   }
 
-  saveSession(messages: Session['messages'], axisKey?: string): void {
+  saveSession(messages: Session['messages'], axisKey: string): void {
     const sessions = this.readSessions()
     const id = sessions.length > 0 ? sessions[sessions.length - 1].id + 1 : 1
-    sessions.push({ id, createdAt: new Date().toISOString(), messages, ...(axisKey ? { axisKey } : {}) })
+    sessions.push({ id, createdAt: new Date().toISOString(), messages, axisKey })
     this.write(SESSIONS_FILE, { sessions })
   }
 

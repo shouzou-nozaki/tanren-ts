@@ -33,8 +33,8 @@ function writeRaw(file: string, content: string): void {
 describe('YamlStorage', () => {
   it('セッションを保存して読み戻せる', () => {
     const s = makeStorage()
-    s.saveSession([{ role: 'user', content: 'Q' }])
-    s.saveSession([{ role: 'user', content: 'Q2' }])
+    s.saveSession([{ role: 'user', content: 'Q' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Q2' }], 'a')
 
     expect(s.getAllSessions()).toHaveLength(2)
     expect(s.getRecentSessions(1)[0].messages[0].content).toBe('Q2')

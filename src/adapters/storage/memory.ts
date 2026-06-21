@@ -31,12 +31,12 @@ export class MemoryStorage implements Storage {
     this.reports.push({ id: this.nextReportId++, createdAt: new Date().toISOString(), abilities })
   }
 
-  saveSession(messages: Message[], axisKey?: string): void {
+  saveSession(messages: Message[], axisKey: string): void {
     this.sessions.push({
       id: this.nextId++,
       createdAt: new Date().toISOString(),
       messages,
-      ...(axisKey ? { axisKey } : {}),
+      axisKey,
     })
   }
 

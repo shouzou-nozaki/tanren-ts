@@ -4,7 +4,7 @@ export type Session = {
   id: number
   createdAt: string
   messages: Message[]
-  axisKey?: string
+  axisKey: string
 }
 
 export type Axis = {
@@ -29,7 +29,7 @@ export type Report = {
 export interface SessionStore {
   getRecentSessions(limit: number, axisKey?: string): Session[]
   getAllSessions(): Session[]
-  saveSession(messages: Message[], axisKey?: string): void
+  saveSession(messages: Message[], axisKey: string): void
 }
 
 export interface ReportStore {
