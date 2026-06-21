@@ -5,6 +5,7 @@ import type { Session } from '../core/ports/storage'
 const session = (id: number, user: string, assistant: string): Session => ({
   id,
   createdAt: '2026-06-11T00:00:00.000Z',
+  axisKey: 'a',
   messages: [
     { role: 'user', content: user },
     { role: 'assistant', content: assistant },

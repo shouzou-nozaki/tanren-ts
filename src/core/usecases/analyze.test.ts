@@ -28,10 +28,13 @@ function recordingProvider(): { provider: ProviderAgent; calls: Recorded[] } {
 function seed(axes: Axis[] = AXES): MemoryStorage {
   const s = new MemoryStorage()
   s.saveAxes(axes)
-  s.saveSession([
-    { role: 'user', content: 'Q1' },
-    { role: 'assistant', content: 'A1' },
-  ])
+  s.saveSession(
+    [
+      { role: 'user', content: 'Q1' },
+      { role: 'assistant', content: 'A1' },
+    ],
+    'a'
+  )
   return s
 }
 
@@ -88,13 +91,13 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes(AXES)
-    s.saveSession([{ role: 'user', content: 'Q1' }])
+    s.saveSession([{ role: 'user', content: 'Q1' }], 'a')
 
     at('2026-01-01T01:00:00Z')
     await analyze(recordingProvider().provider, s, noopHandlers)
 
     at('2026-01-01T02:00:00Z')
-    s.saveSession([{ role: 'user', content: 'Q2' }])
+    s.saveSession([{ role: 'user', content: 'Q2' }], 'a')
 
     at('2026-01-01T03:00:00Z')
     const { provider, calls } = recordingProvider()
@@ -113,13 +116,13 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes([AXES[0]])
-    s.saveSession([{ role: 'user', content: '古い質問OLD' }])
+    s.saveSession([{ role: 'user', content: '古い質問OLD' }], 'a')
 
     at('2026-01-01T01:00:00Z')
     await analyze(recordingProvider().provider, s, noopHandlers)
 
     at('2026-01-01T02:00:00Z')
-    s.saveSession([{ role: 'user', content: '新しい質問NEW' }])
+    s.saveSession([{ role: 'user', content: '新しい質問NEW' }], 'a')
 
     at('2026-01-01T03:00:00Z')
     const { provider, calls } = recordingProvider()
@@ -135,7 +138,7 @@ describe('analyze', () => {
     s.saveAxes([AXES[0]])
     for (let i = 0; i < 25; i++) {
       at(`2026-01-01T00:${String(i).padStart(2, '0')}:00Z`)
-      s.saveSession([{ role: 'user', content: `S${i}` }])
+      s.saveSession([{ role: 'user', content: `S${i}` }], 'a')
     }
 
     at('2026-01-02T00:00:00Z')
@@ -154,7 +157,7 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes(AXES)
-    s.saveSession([{ role: 'user', content: 'Q' }])
+    s.saveSession([{ role: 'user', content: 'Q' }], 'a')
 
     at('2026-01-01T01:00:00Z')
     await analyze(recordingProvider().provider, s, noopHandlers)
@@ -205,7 +208,7 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes([AXES[0]])
-    s.saveSession([{ role: 'user', content: 'Q1' }])
+    s.saveSession([{ role: 'user', content: 'Q1' }], 'a')
 
     const first: ProviderAgent = {
       capabilities: { readsLocalSource: false },
@@ -219,7 +222,7 @@ describe('analyze', () => {
     await analyze(first, s, noopHandlers)
 
     at('2026-01-01T02:00:00Z')
-    s.saveSession([{ role: 'user', content: 'Q2' }])
+    s.saveSession([{ role: 'user', content: 'Q2' }], 'a')
 
     at('2026-01-01T03:00:00Z')
     const { provider, calls } = recordingProvider()
@@ -248,7 +251,7 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes([AXES[0]])
-    s.saveSession([{ role: 'user', content: 'Q1' }])
+    s.saveSession([{ role: 'user', content: 'Q1' }], 'a')
 
     const scoring: ProviderAgent = {
       capabilities: { readsLocalSource: false },
@@ -262,7 +265,7 @@ describe('analyze', () => {
     await analyze(scoring, s, noopHandlers)
 
     at('2026-01-01T02:00:00Z')
-    s.saveSession([{ role: 'user', content: 'Q2' }])
+    s.saveSession([{ role: 'user', content: 'Q2' }], 'a')
 
     const unscorable: ProviderAgent = {
       capabilities: { readsLocalSource: false },
@@ -283,7 +286,7 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes([AXES[0]]) // a のみ
-    s.saveSession([{ role: 'user', content: '古い-OLD' }])
+    s.saveSession([{ role: 'user', content: '古い-OLD' }], 'a')
 
     at('2026-01-01T01:00:00Z')
     await analyze(recordingProvider().provider, s, noopHandlers) // R1（a を含む）

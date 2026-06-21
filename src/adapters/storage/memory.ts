@@ -10,8 +10,8 @@ export class MemoryStorage implements Storage {
   private nextId = 1
   private nextReportId = 1
 
-  getRecentSessions(limit: number): Session[] {
-    return this.sessions.slice(-limit)
+  getRecentSessions(limit: number, axisKey: string): Session[] {
+    return this.sessions.filter((s) => s.axisKey === axisKey).slice(-limit)
   }
 
   getAllSessions(): Session[] {
@@ -30,11 +30,12 @@ export class MemoryStorage implements Storage {
     this.reports.push({ id: this.nextReportId++, createdAt: new Date().toISOString(), abilities })
   }
 
-  saveSession(messages: Message[]): void {
+  saveSession(messages: Message[], axisKey: string): void {
     this.sessions.push({
       id: this.nextId++,
       createdAt: new Date().toISOString(),
       messages,
+      axisKey,
     })
   }
 
