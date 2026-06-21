@@ -55,7 +55,7 @@ describe('analyze', () => {
   it('履歴が空なら例外を投げる', async () => {
     const { provider } = recordingProvider()
     const s = new MemoryStorage()
-    await expect(analyze(provider, s, noopHandlers)).rejects.toThrow('壁打ち履歴がありません')
+    await expect(analyze(provider, s, noopHandlers)).rejects.toThrow('壁打ちがありません')
   })
 
   it('軸ごとに専門システムプロンプトのエージェントが順に走る', async () => {
@@ -169,7 +169,7 @@ describe('analyze', () => {
 
     at('2026-01-01T02:00:00Z')
     await expect(analyze(recordingProvider().provider, s, noopHandlers)).rejects.toThrow(
-      '新しい壁打ち'
+      '壁打ちがありません'
     )
   })
 

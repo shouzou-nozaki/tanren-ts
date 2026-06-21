@@ -108,10 +108,6 @@ export async function analyze(
   axes: Axis[] = storage.getAxes()
 ): Promise<Report['abilities']> {
   const sessions = storage.getAllSessions()
-  if (sessions.length === 0) {
-    throw new Error('解析する壁打ち履歴がありません。先に tanren ask で対話してください。')
-  }
-
   const reports = storage.getAllReports()
   const abilities: AbilityReport[] = []
 
@@ -149,7 +145,7 @@ export async function analyze(
   }
 
   if (abilities.length === 0) {
-    throw new Error('前回の解析以降、新しい壁打ちがありません。先に tanren ask で対話してください。')
+    throw new Error('解析できる壁打ちがありません。対象の能力で tanren ask をしてから試してください。')
   }
 
   storage.saveReport(abilities)
