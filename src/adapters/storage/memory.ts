@@ -10,9 +10,8 @@ export class MemoryStorage implements Storage {
   private nextId = 1
   private nextReportId = 1
 
-  getRecentSessions(limit: number, axisKey?: string): Session[] {
-    const pool = axisKey ? this.sessions.filter((s) => s.axisKey === axisKey) : this.sessions
-    return pool.slice(-limit)
+  getRecentSessions(limit: number, axisKey: string): Session[] {
+    return this.sessions.filter((s) => s.axisKey === axisKey).slice(-limit)
   }
 
   getAllSessions(): Session[] {

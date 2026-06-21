@@ -27,7 +27,7 @@ export type Report = {
 }
 
 export interface SessionStore {
-  getRecentSessions(limit: number, axisKey?: string): Session[]
+  getRecentSessions(limit: number, axisKey: string): Session[]
   getAllSessions(): Session[]
   saveSession(messages: Message[], axisKey: string): void
 }

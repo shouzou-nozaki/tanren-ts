@@ -58,10 +58,10 @@ const axesFileSchema = z.object({
 const configFileSchema = z.record(z.string(), z.string())
 
 export class YamlStorage implements Storage {
-  getRecentSessions(limit: number, axisKey?: string): Session[] {
-    const all = this.readSessions()
-    const pool = axisKey ? all.filter((s) => s.axisKey === axisKey) : all
-    return pool.slice(-limit)
+  getRecentSessions(limit: number, axisKey: string): Session[] {
+    return this.readSessions()
+      .filter((s) => s.axisKey === axisKey)
+      .slice(-limit)
   }
 
   getAllSessions(): Session[] {
