@@ -28,13 +28,16 @@ function recordingProvider(): { provider: ProviderAgent; calls: Recorded[] } {
 function seed(axes: Axis[] = AXES): MemoryStorage {
   const s = new MemoryStorage()
   s.saveAxes(axes)
-  s.saveSession(
-    [
-      { role: 'user', content: 'Q1' },
-      { role: 'assistant', content: 'A1' },
-    ],
-    'a'
-  )
+  // 各軸にその軸の会話を1つずつ持たせる（analyze は軸ごとに自分の会話だけ見る）
+  for (const a of axes) {
+    s.saveSession(
+      [
+        { role: 'user', content: `Q1-${a.key}` },
+        { role: 'assistant', content: `A1-${a.key}` },
+      ],
+      a.key
+    )
+  }
   return s
 }
 
@@ -91,13 +94,15 @@ describe('analyze', () => {
     at('2026-01-01T00:00:00Z')
     const s = new MemoryStorage()
     s.saveAxes(AXES)
-    s.saveSession([{ role: 'user', content: 'Q1' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Q1a' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Q1b' }], 'b')
 
     at('2026-01-01T01:00:00Z')
     await analyze(recordingProvider().provider, s, noopHandlers)
 
     at('2026-01-01T02:00:00Z')
-    s.saveSession([{ role: 'user', content: 'Q2' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Q2a' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Q2b' }], 'b')
 
     at('2026-01-01T03:00:00Z')
     const { provider, calls } = recordingProvider()
@@ -281,25 +286,33 @@ describe('analyze', () => {
     expect(result[0].score).toBe(3)
   })
 
-  it('未解析の軸は全履歴を対象にし、新規材料の無い軸はスキップする', async () => {
-    vi.useFakeTimers()
-    at('2026-01-01T00:00:00Z')
+  it('各軸は自分の軸のセッションだけを解析する', async () => {
     const s = new MemoryStorage()
-    s.saveAxes([AXES[0]]) // a のみ
-    s.saveSession([{ role: 'user', content: '古い-OLD' }], 'a')
+    s.saveAxes(AXES)
+    s.saveSession([{ role: 'user', content: 'Aの話題XA' }], 'a')
+    s.saveSession([{ role: 'user', content: 'Bの話題XB' }], 'b')
 
-    at('2026-01-01T01:00:00Z')
-    await analyze(recordingProvider().provider, s, noopHandlers) // R1（a を含む）
+    const { provider, calls } = recordingProvider()
+    await analyze(provider, s, noopHandlers)
 
-    at('2026-01-01T02:00:00Z')
-    s.saveAxes(AXES) // a + b に増やす
+    const aCall = calls.find((c) => c.system.includes('Aの力'))!
+    const bCall = calls.find((c) => c.system.includes('Bの力'))!
+    expect(aCall.user).toContain('XA')
+    expect(aCall.user).not.toContain('XB')
+    expect(bCall.user).toContain('XB')
+    expect(bCall.user).not.toContain('XA')
+  })
+
+  it('その軸のセッションが無い軸はスキップする', async () => {
+    const s = new MemoryStorage()
+    s.saveAxes(AXES)
+    s.saveSession([{ role: 'user', content: 'Aだけ' }], 'a') // b の会話は無い
+
     const { provider, calls } = recordingProvider()
     const result = await analyze(provider, s, noopHandlers)
 
-    // a は前回(01:00)以降の新規が無いのでスキップ。b は初解析で全履歴(OLD)を見る
-    expect(result.map((r) => r.axis)).toEqual(['b'])
-    const bCall = calls.find((c) => c.system.includes('Bの力'))!
-    expect(bCall.user).toContain('OLD')
+    expect(result.map((r) => r.axis)).toEqual(['a'])
+    expect(calls.find((c) => c.system.includes('Bの力'))).toBeUndefined()
   })
 })
 
