@@ -23,6 +23,7 @@ const sessionsFileSchema = z.object({
           content: z.string(),
         })
       ),
+      axisKey: z.string().optional(),
     })
   ),
 })
@@ -57,8 +58,10 @@ const axesFileSchema = z.object({
 const configFileSchema = z.record(z.string(), z.string())
 
 export class YamlStorage implements Storage {
-  getRecentSessions(limit: number): Session[] {
-    return this.readSessions().slice(-limit)
+  getRecentSessions(limit: number, axisKey?: string): Session[] {
+    const all = this.readSessions()
+    const pool = axisKey ? all.filter((s) => s.axisKey === axisKey) : all
+    return pool.slice(-limit)
   }
 
   getAllSessions(): Session[] {
@@ -81,10 +84,10 @@ export class YamlStorage implements Storage {
     this.write(REPORTS_FILE, { reports })
   }
 
-  saveSession(messages: Session['messages']): void {
+  saveSession(messages: Session['messages'], axisKey?: string): void {
     const sessions = this.readSessions()
     const id = sessions.length > 0 ? sessions[sessions.length - 1].id + 1 : 1
-    sessions.push({ id, createdAt: new Date().toISOString(), messages })
+    sessions.push({ id, createdAt: new Date().toISOString(), messages, ...(axisKey ? { axisKey } : {}) })
     this.write(SESSIONS_FILE, { sessions })
   }
 

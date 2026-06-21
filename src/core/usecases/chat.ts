@@ -38,7 +38,8 @@ export async function chat(
   onChunk: (text: string) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const recent = storage.getRecentSessions(RECENT_TURNS)
+  // 同じ軸の直近の会話だけを文脈にする（recap と同じ窓を見る）
+  const recent = storage.getRecentSessions(RECENT_TURNS, axis.key)
 
   // 過去の会話履歴を時系列で並べる
   const history: Message[] = recent
@@ -49,8 +50,11 @@ export async function chat(
   // どの軸で掘るかは呼び出し側が決める。中断・失敗時はここで例外が伝播し保存はスキップ
   const response = await provider.chatStream(buildSystemPrompt(axis), messages, onChunk, signal)
 
-  storage.saveSession([
-    { role: 'user', content: userInput },
-    { role: 'assistant', content: response },
-  ])
+  storage.saveSession(
+    [
+      { role: 'user', content: userInput },
+      { role: 'assistant', content: response },
+    ],
+    axis.key
+  )
 }

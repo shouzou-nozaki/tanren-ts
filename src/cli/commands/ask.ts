@@ -19,10 +19,10 @@ export async function askCommand(provider: ProviderAgent, storage: Storage): Pro
   const focusAxis = await selectFocusAxis(storage.getAxes())
   console.log(chalk.gray(`今回のフォーカス: ${focusAxis.label}\n`))
 
-  // コーチが文脈として覚えている直近の会話を、ユーザーにも見せてから続きを始める
-  const recent = storage.getRecentSessions(RECENT_TURNS)
+  // コーチが文脈として覚えている、この軸の直近の会話を見せてから続きを始める
+  const recent = storage.getRecentSessions(RECENT_TURNS, focusAxis.key)
   if (recent.length > 0) {
-    console.log(chalk.gray('── これまでの会話 ──'))
+    console.log(chalk.gray(`── これまでの会話（${focusAxis.label}）──`))
     console.log(chalk.gray(formatRecap(recent)))
     console.log(chalk.gray('────────────────\n'))
   }
